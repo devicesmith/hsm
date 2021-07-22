@@ -45,7 +45,7 @@ public:
 	// States in test
 	static hsm_state_result RootState(struct hsm_state *self, struct hsm_event const *e);
 	static hsm_state_result s0(struct hsm_state* self, struct hsm_event const * hsmEvent);
-  	static hsm_state_result s1(struct hsm_state* self, struct hsm_event const * hsmEvent);
+	static hsm_state_result s1(struct hsm_state* self, struct hsm_event const * hsmEvent);
 	static hsm_state_result s11(struct hsm_state* self, struct hsm_event const * hsmEvent);
 	static hsm_state_result s12(struct hsm_state* self, struct hsm_event const * hsmEvent);
 	static hsm_state_result s13(struct hsm_state* self, struct hsm_event const * hsmEvent);
@@ -93,11 +93,11 @@ hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
 		case HSM_SIG_ENTRY:
 //			CAST_DIALOG(self)->WriteDisplay(_T("S0:Entry"));
 //			return STATE_HANDLED;
-			printf("S0:Entry\n");
+			printf("(S0:Entry) ");
 			return HANDLE_STATE();
 		case HSM_SIG_EXIT:
 //			CAST_DIALOG(self)->WriteDisplay(_T("S0:Exit"));
-			printf("S0:Exit\n");
+			printf("(S0:Exit) ");
 			return HANDLE_STATE();
 		case HSM_SIG_INITIAL:
 			return HANDLE_STATE();
@@ -132,11 +132,11 @@ hsm_state_result TestHSM::s1(struct hsm_state* self, struct hsm_event const * hs
   {
     case HSM_SIG_ENTRY:
 //      CAST_DIALOG(self)->WriteDisplay(_T("S1:Entry"));
-		printf("S1:Entry\n");
+		printf("(S1:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
 //      CAST_DIALOG(self)->WriteDisplay(_T("S1:Exit"));
-      printf("S1:Exit\n");
+      printf("(S1:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -155,10 +155,10 @@ hsm_state_result TestHSM::s11(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("S11:Entry\n");
+      printf("(S11:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("S11:Exit\n");
+      printf("(S11:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -181,10 +181,10 @@ hsm_state_result TestHSM::s12(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("S12:Entry\n");
+      printf("(S12:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("S12:Exit\n");
+      printf("(S12:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -203,10 +203,10 @@ hsm_state_result TestHSM::s13(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("S13:Entry\n");
+      printf("(S13:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("S13:Exit\n");
+      printf("(S13:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -225,11 +225,11 @@ hsm_state_result TestHSM::s2(struct hsm_state* self, struct hsm_event const * hs
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-		printf("S2:Entry\n");
+		printf("(S2:Entry) ");
 //      return STATE_HANDLED;
 		return HANDLE_STATE();
 	case HSM_SIG_EXIT:
-		printf("S2:Exit\n");
+		printf("(S2:Exit) ");
 //      return STATE_HANDLED;
 		return HANDLE_STATE();
     case HSM_SIG_INITIAL:
@@ -238,7 +238,7 @@ hsm_state_result TestHSM::s2(struct hsm_state* self, struct hsm_event const * hs
     case TEST_SIG_G:
       //self->stateHandler = s11;
       //return STATE_CHANGED;
-      //return CHANGE_STATE(self, &TestHSM::s11);
+      return CHANGE_STATE(self, &TestHSM::s11);
     case TEST_SIG_I:
       //self->stateHandler = s1;
       //return STATE_CHANGED;
@@ -257,11 +257,11 @@ hsm_state_result TestHSM::s21(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-		printf("S21:Entry\n");
+		printf("(S21:Entry) ");
 //      return STATE_HANDLED;
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-		printf("S21:Exit\n");
+		printf("(S21:Exit) ");
 //      return STATE_HANDLED;
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
@@ -286,10 +286,10 @@ hsm_state_result TestHSM::s211(struct hsm_state* self, struct hsm_event const * 
 	switch(hsmEvent->signal)
 	{
 		case HSM_SIG_ENTRY:
-			printf("S211:Entry\n");
+			printf("(S211:Entry) ");
 			return HANDLE_STATE();
 		case HSM_SIG_EXIT:
-			printf("S211:Exit\n");
+			printf("(S211:Exit) ");
 			return HANDLE_STATE();
 		case HSM_SIG_INITIAL:
 			return HANDLE_STATE();
@@ -316,10 +316,10 @@ hsm_state_result TestHSM::s22(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("S22:Entry\n");
+      printf("(S22:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("S22:Exit\n");
+      printf("(S22:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -338,10 +338,10 @@ hsm_state_result TestHSM::state0(struct hsm_state* self, struct hsm_event const 
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("state0:Entry\n");
+      printf("(state0:Entry) ");
 	  return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("state0:Exit\n");
+      printf("(state0:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -362,12 +362,12 @@ hsm_state_result TestHSM::state1(struct hsm_state* self, struct hsm_event const 
     case HSM_SIG_ENTRY:
       //CAST_DIALOG(self)->WriteDisplay(_T("state1:Entry"));
 		//return STATE_HANDLED;
-      printf("state1:Entry\n");
+      printf("(state1:Entry) ");
 	  return HANDLE_STATE();
     case HSM_SIG_EXIT:
       //CAST_DIALOG(self)->WriteDisplay(_T("state1:Exit"));
       //return STATE_HANDLED;
-		printf("state1:Exit\n");
+		printf("(state1:Exit) ");
 		return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       //return STATE_HANDLED;
@@ -389,12 +389,12 @@ hsm_state_result TestHSM::state2(struct hsm_state* self, struct hsm_event const 
     case HSM_SIG_ENTRY:
       //CAST_DIALOG(self)->WriteDisplay(_T("state2:Entry"));
       //return STATE_HANDLED;
-		printf("state2:Entry\n");
+		printf("(state2:Entry) ");
 		return HANDLE_STATE();
     case HSM_SIG_EXIT:
       //CAST_DIALOG(self)->WriteDisplay(_T("state2:Exit"));
       //return STATE_HANDLED;
-		printf("state2:Exit\n");
+		printf("(state2:Exit) ");
 		return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -414,10 +414,10 @@ hsm_state_result TestHSM::state3(struct hsm_state* self, struct hsm_event const 
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("state3:Entry\n");
+      printf("(state3:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("state3:Exit\n");
+      printf("(state3:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -438,15 +438,34 @@ hsm_state_result TestHSM::state3(struct hsm_state* self, struct hsm_event const 
 TEST_CASE("One")
 {
 	TestHSM testHSM;
-	testHSM.InitStateMachine(&testHSM.state, &testHSM.s0);
+
 
 	SECTION("Initial State")
 	{
 		//testHSM
 		REQUIRE(true);
+    testHSM.InitStateMachine(&testHSM.state, &testHSM.s0);
 		REQUIRE(testHSM.state.stateHandler == &testHSM.s0);
 		hsmProcess(&testHSM.state);
-
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s0);
+    hsmProcess(&testHSM.state);
 	}
+
+  SECTION("Initial State, complex")
+	{
+    testHSM.InitStateMachine(&testHSM.state, &testHSM.s21);
+		REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+		hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+	}
+
+//  SECTION("Signal, simple")
+//	{
+//    testHSM.InitStateMachine(&testHSM.state, &testHSM.s21);
+//		REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+//		hsmProcess(&testHSM.state);
+//    REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+//	}
+//
 
 }

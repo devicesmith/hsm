@@ -1,5 +1,12 @@
 #include "HSMFrameWork.h"
 
+#include <iostream>
+
+int signal_filter[10] = {1, 2, 3, 4, 5};
+//int signal_filter[10] = {5};
+
+bool print_signal = true;
+
 //struct hsm_event* hsmEventQueue[EVENT_QUEUE_DEPTH];
 struct hsm_event_pool hsmEventPool;
 struct hsm_event baseEntryEvent;
@@ -143,12 +150,13 @@ int hsmDiscoverHierarch(struct hsm_state* state, state_handler *path, int pathDe
   int index = 0;
   struct hsm_state* initialState = state;
   do
-  {    
+  {
     path[index++] = state->stateHandler;
     // Call super state and update state->handler
     stateResult = state->stateHandler(state, &baseSilentEvent);
   } while((stateResult == STATE_DO_SUPERSTATE) && (index < pathDepth));
 
+  //printf("\n");
   state = initialState;
   
   return index;
@@ -176,12 +184,14 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
   state_handler endHandler = stateHandler;
   state->stateHandler = stateHandler;
   index = hsmDiscoverHierarch(state, path, sizeof(path)/sizeof(*path));
+  printf("\n");
   do
   {
     path[--index](state, &baseEntryEvent);
   } while(path[index] != endHandler);
 
   state->stateHandler = stateHandler;
+  printf("\n");
 }
 
 void hsmProcess(struct hsm_state * self)

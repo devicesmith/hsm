@@ -68,7 +68,7 @@ void hsmEventDelete(void *);
 
 extern void (*pLogCallback)(char *);
 
-//#define HSM_DEBUG_LOGGING
+#define HSM_DEBUG_LOGGING
 
 #ifdef HSM_DEBUG_LOGGING
 
@@ -80,29 +80,21 @@ extern bool print_signal;
 	print_signal = (f == std::end(signal_filter)); \
 	if (print_signal) printf("%s(e:%d) -> ", __func__, (e)->signal); }
 
-#define HSM_DEBUG_PRINT(x) (print_signal ? printf("%s [%s]\n", __func__, (x)) : HSM_STATE_HANDLED)
+#define HSM_DEBUG_PRINT(x) ({if(print_signal) printf("%s [%s] ", __func__, (x));})
 
 #else
 #define HSM_DEBUG_LOG_STATE_EVENT(stateData, e) (void(stateData), void(e))
 #define HSM_DEBUG_PRINT(x) (void(x))
 #endif
 
-//#define CHANGE_STATE(current_state_data, new_state) (((current_state_data)->stateHandler = (new_state)), \
-//					HSM_DEBUG_PRINT("CHANGE_STATE"), HSM_STATE_CHANGED)
+
 #define CHANGE_STATE(current_state, new_state) (current_state->stateHandler = new_state), \
 					HSM_DEBUG_PRINT("CHANGE_STATE"), STATE_CHANGED
 
 #define HANDLE_STATE() (HSM_DEBUG_PRINT("HANDLE_STATE"), STATE_HANDLED)
 
-//#define IGNORE_STATE(x) (void(x), HSM_DEBUG_PRINT("IGNORE_STATE"), HSM_STATE_IGNORED)
 #define IGNORE_STATE(x) (void(x), HSM_DEBUG_PRINT("IGNORE_STATE"), STATE_IGNORED)
 
-////#define HANDLE_SUPER_STATE(state_data, super_state) ((((hsm_state_t *)state_data)->stateHandler = (super_state)),\
-////													 HSM_DEBUG_PRINT("HANDLE_SUPER_STATE"), \
-////													 HSM_STATE_DO_SUPERSTATE)
-//#define HANDLE_SUPER_STATE(state_data, super_state) (state_data->SetStateHandler((super_state)),\
-//													 HSM_DEBUG_PRINT("HANDLE_SUPER_STATE"), \
-//													 HSM_STATE_DO_SUPERSTATE)
 #define HANDLE_SUPER_STATE(state, super_state) (state->stateHandler = super_state),\
 													 HSM_DEBUG_PRINT("HANDLE_SUPER_STATE"), \
 													 STATE_DO_SUPERSTATE
