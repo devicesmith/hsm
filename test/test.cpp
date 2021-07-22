@@ -75,8 +75,8 @@ struct hsm_event* hsmTestEventQueue[10];
 //void TestHSM::InitStateMachine(hsm_test_state * initialState)
 void TestHSM::InitStateMachine(struct hsm_state* state, state_handler initialState)
 {
-	hsmEventPoolInit(hsmTestEventPool, sizeof(hsmTestEventPool));
-	hsmEventQueueInit(hsmTestEventQueue, sizeof(hsmTestEventQueue));
+	hsmEventPoolInit(hsmTestEventPool, ARRAY_LENGTH(hsmTestEventPool));
+	hsmEventQueueInit(hsmTestEventQueue, ARRAY_LENGTH(hsmTestEventQueue));
 	hsmInitStateMachine();
 	hsmInitialState(state, initialState);
 }
@@ -276,8 +276,6 @@ hsm_state_result TestHSM::s21(struct hsm_state* self, struct hsm_event const * h
 //      return STATE_CHANGED;
 		return CHANGE_STATE(self, &TestHSM::s22);
   }
-//  self->stateHandler = s2;
-//  return STATE_DO_SUPERSTATE;
   return HANDLE_SUPER_STATE(self, &TestHSM::s2);
 }
 
@@ -459,13 +457,30 @@ TEST_CASE("One")
     REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
 	}
 
-//  SECTION("Signal, simple")
-//	{
-//    testHSM.InitStateMachine(&testHSM.state, &testHSM.s21);
-//		REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
-//		hsmProcess(&testHSM.state);
-//    REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
-//	}
-//
+  SECTION("Event New")
+  {
+    struct hsm_test_event * e;
+
+    for (int i = 0; i < ARRAY_LENGTH(hsmTestEventPool); i++)
+    {
+      e = (hsm_test_event*)hsmEventNew();
+      REQUIRE(e != 0);
+    }
+
+    e = (hsm_test_event*)hsmEventNew();
+    REQUIRE(e == 0);
+  }
+
+  SECTION("Transitions")
+	{
+    testHSM.InitStateMachine(&testHSM.state, &testHSM.s21);
+		REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+
+    struct hsm_test_event * e = (hsm_test_event*)hsmEventNew();
+
+		//hsmProcess(&testHSM.state);
+    //REQUIRE(testHSM.state.stateHandler == &testHSM.s21);
+	}
+
 
 }

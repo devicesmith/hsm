@@ -106,8 +106,11 @@ hsm_event * hsmEventNew(void)
 {
   int i;
 
+  printf("hsmEventNew - array length:%d\n", hsmEventPool.arrayLength);
+
   for(i=0; i < hsmEventPool.arrayLength; i++)
   {
+    printf("hsmEventNew:%d (%d)\n", i, hsmEventPool.eventArray[i].inUse);
     if(!hsmEventPool.eventArray[i].inUse)
     {
       hsmEventPool.eventArray[i].inUse = true;

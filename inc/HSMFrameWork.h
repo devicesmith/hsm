@@ -1,6 +1,8 @@
 #ifndef __HSMFRAMEWORK_H__
 #define __HSMFRAMEWORK_H__
 
+#define ARRAY_LENGTH(array) (sizeof(array)/sizeof(*(array)))
+
 typedef enum 
 {
   STATE_IGNORED,
