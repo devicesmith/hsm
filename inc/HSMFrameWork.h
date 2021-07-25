@@ -55,8 +55,12 @@ typedef hsm_state_result (*state_handler)(struct hsm_state * self, struct hsm_ev
 
 void hsmInitStateMachine(void);
 void hsmInitialState(struct hsm_state* state, state_handler stateHandler);
+
+void hsmHandleEvent(hsm_state * self, struct hsm_event * e);
+
 void hsmProcess(hsm_state * self);
-  
+
+
 void fifoInit(struct hsm_event **eventStart, int depth);
 int fifoDepth();
 int fifoSize();
@@ -77,30 +81,49 @@ extern void (*pLogCallback)(char *);
 extern int signal_filter[10];
 extern bool print_signal;
 
-#define HSM_DEBUG_LOG_STATE_EVENT(stateData, e) { \
-	int *f = std::find(std::begin(signal_filter), std::end(signal_filter), e->signal); \
-	print_signal = (f == std::end(signal_filter)); \
-	if (print_signal) printf("%s(e:%d) -> ", __func__, (e)->signal); }
+//#define HSM_DEBUG_PRINT_EVENT(e) { \
+//	int *f = std::find(std::begin(signal_filter), std::end(signal_filter), (e)->signal); \
+//	print_signal = (f == std::end(signal_filter)); \
+//	if (print_signal) printf("%s(e:%d) -> ", __func__, (e)->signal); }
 
-#define HSM_DEBUG_PRINT(x) ({if(print_signal) printf("%s [%s] ", __func__, (x));})
+#define HSM_DEBUG_PRINT(x) ({if(print_signal) printf("%s [%s];", __func__, (x));})
+#define HSM_DEBUG_NEWLINE() (printf("\n"))
+#define HSM_DEBUG_PRINT_EVENT(e) (printf("%s-%s;", __func__, signalNames[(e)->signal]))
 
 #else
 #define HSM_DEBUG_LOG_STATE_EVENT(stateData, e) (void(stateData), void(e))
 #define HSM_DEBUG_PRINT(x) (void(x))
+#define HSM_DEBUG_NEWLINE() // will this work? empty define needed here.
+#define HSM_DEBUG_PRINT_EVENT(e) (void(e))
 #endif
 
-
+//
+// State Handler macros
+//
+#if 01
+// these work
 #define CHANGE_STATE(current_state, new_state) (current_state->stateHandler = new_state), \
 					HSM_DEBUG_PRINT("CHANGE_STATE"), STATE_CHANGED
-
 #define HANDLE_STATE() (HSM_DEBUG_PRINT("HANDLE_STATE"), STATE_HANDLED)
-
 #define IGNORE_STATE(x) (void(x), HSM_DEBUG_PRINT("IGNORE_STATE"), STATE_IGNORED)
-
 #define HANDLE_SUPER_STATE(state, super_state) (state->stateHandler = super_state),\
 													 HSM_DEBUG_PRINT("HANDLE_SUPER_STATE"), \
 													 STATE_DO_SUPERSTATE
+#else
+// experimental
+#define CHANGE_STATE(current_state, new_state) (current_state->stateHandler = new_state), \
+					HSM_DEBUG_PRINT_EVENT(), STATE_CHANGED
 
+#define HANDLE_STATE() (HSM_DEBUG_PRINT_EVENT("HANDLE_STATE"), STATE_HANDLED)
+
+#define IGNORE_STATE(x) (void(x), HSM_DEBUG_PRINT_EVENT("IGNORE_STATE"), STATE_IGNORED)
+
+#define HANDLE_SUPER_STATE(state, super_state) (state->stateHandler = super_state),\
+													 HSM_DEBUG_PRINT_EVENT("HANDLE_SUPER_STATE"), \
+													 STATE_DO_SUPERSTATE
+#endif
+
+// Experiments
 
 
 #endif

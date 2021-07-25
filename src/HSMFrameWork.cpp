@@ -2,6 +2,17 @@
 
 #include <iostream>
 
+// Must match enum
+#define stringify( name ) # name
+const char* signalNames[] = {
+stringify(UNKNOWN),
+stringify(INIT),
+stringify(SILENT),
+stringify(ENTRY),
+stringify(EXIT),
+stringify(INITIAL)
+};
+
 int signal_filter[10] = {1, 2, 3, 4, 5};
 //int signal_filter[10] = {5};
 
@@ -12,6 +23,7 @@ struct hsm_event_pool hsmEventPool;
 struct hsm_event baseEntryEvent;
 struct hsm_event baseExitEvent;
 struct hsm_event baseSilentEvent;
+struct hsm_event baseInitialEvent;
 
 struct fifo_data fifoData;
 
@@ -106,11 +118,11 @@ hsm_event * hsmEventNew(void)
 {
   int i;
 
-  printf("hsmEventNew - array length:%d\n", hsmEventPool.arrayLength);
+  //printf("hsmEventNew - array length:%d\n", hsmEventPool.arrayLength);
 
   for(i=0; i < hsmEventPool.arrayLength; i++)
   {
-    printf("hsmEventNew:%d (%d)\n", i, hsmEventPool.eventArray[i].inUse);
+    //printf("hsmEventNew:%d (%d)\n", i, hsmEventPool.eventArray[i].inUse);
     if(!hsmEventPool.eventArray[i].inUse)
     {
       hsmEventPool.eventArray[i].inUse = true;
@@ -140,6 +152,7 @@ void hsmInitStateMachine(void)
   baseEntryEvent.signal  = HSM_SIG_ENTRY;
   baseExitEvent.signal   = HSM_SIG_EXIT;
   baseSilentEvent.signal = HSM_SIG_SILENT;
+  baseInitialEvent.signal = HSM_SIG_INITIAL;
 }
 
 int hsmDiscoverHierarch(struct hsm_state* state, state_handler *path, int pathDepth)
@@ -159,7 +172,7 @@ int hsmDiscoverHierarch(struct hsm_state* state, state_handler *path, int pathDe
     stateResult = state->stateHandler(state, &baseSilentEvent);
   } while((stateResult == STATE_DO_SUPERSTATE) && (index < pathDepth));
 
-  //printf("\n");
+  HSM_DEBUG_NEWLINE();
   state = initialState;
   
   return index;
@@ -183,18 +196,29 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
 {
   state_handler path[10];
   int index = 0;
-  
+
   state_handler endHandler = stateHandler;
   state->stateHandler = stateHandler;
   index = hsmDiscoverHierarch(state, path, sizeof(path)/sizeof(*path));
-  printf("\n");
+
   do
   {
     path[--index](state, &baseEntryEvent);
   } while(path[index] != endHandler);
 
+  hsmHandleEvent(state, &baseInitialEvent);
+
+
+  //FIX THIS: stateHandler(state,)
+
   state->stateHandler = stateHandler;
-  printf("\n");
+  //printf("\n");
+  printf("hsmInitialState() end\n");
+}
+
+void hsmHandleEvent(struct hsm_state *st, struct hsm_event * e)
+{
+  printf("{hsmHandleEvent() == Implement me}");
 }
 
 void hsmProcess(struct hsm_state * self)
@@ -282,6 +306,6 @@ void hsmProcess(struct hsm_state * self)
   }
   else
   {
-    // call idle function
+    // call idle function (macro)
   }
 }
