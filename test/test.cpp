@@ -90,19 +90,17 @@ hsm_state_result TestHSM::RootState(struct hsm_state* self, struct hsm_event con
 extern const char* signalNames[];
 hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
 {
-  //printf("%s-e:%s", __func__, signalNames[(e)->signal]);
   HSM_DEBUG_PRINT_EVENT(e);
 	switch(e->signal)
 	{
 		case HSM_SIG_ENTRY:
-			printf("(S0:Entry) ");
+//			printf("(S0:Entry) ");
 			return HANDLE_STATE();
 		case HSM_SIG_EXIT:
-			printf("(S0:Exit) ");
+//			printf("(S0:Exit) ");
 			return HANDLE_STATE();
 		case HSM_SIG_INITIAL:
       return CHANGE_STATE(self, &TestHSM::s11);
-			//return HANDLE_STATE();
 		case TEST_SIG_D:
 			return CHANGE_STATE(self, &TestHSM::s211);
 		case TEST_SIG_E:
@@ -123,10 +121,10 @@ hsm_state_result TestHSM::s1(struct hsm_state* self, struct hsm_event const * hs
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("(S1:Entry) ");
+//      printf("(S1:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("(S1:Exit) ");
+//      printf("(S1:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -142,10 +140,10 @@ hsm_state_result TestHSM::s11(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("(S11:Entry) ");
+//      printf("(S11:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("(S11:Exit) ");
+//      printf("(S11:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
@@ -163,10 +161,10 @@ hsm_state_result TestHSM::s12(struct hsm_state* self, struct hsm_event const * h
   switch(hsmEvent->signal)
   {
     case HSM_SIG_ENTRY:
-      printf("(S12:Entry) ");
+//      printf("(S12:Entry) ");
       return HANDLE_STATE();
     case HSM_SIG_EXIT:
-      printf("(S12:Exit) ");
+//      printf("(S12:Exit) ");
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
