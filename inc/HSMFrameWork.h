@@ -75,22 +75,19 @@ void hsmEventDelete(void *);
 extern void (*pLogCallback)(char *);
 
 #define HSM_DEBUG_LOGGING
-
 #ifdef HSM_DEBUG_LOGGING
 
 extern int signal_filter[10];
 extern bool print_signal;
 
-//#define HSM_DEBUG_PRINT_EVENT(e) { \
-//	int *f = std::find(std::begin(signal_filter), std::end(signal_filter), (e)->signal); \
-//	print_signal = (f == std::end(signal_filter)); \
-//	if (print_signal) printf("%s(e:%d) -> ", __func__, (e)->signal); }
 
 //#define HSM_DEBUG_PRINT_HANDLER(x) ({if(print_signal) printf("%s:[%s];", __func__, (x));})
 #define HSM_DEBUG_PRINT_HANDLER(x) (void(x))
 
 #define HSM_DEBUG_NEWLINE() (printf("\n"))
 //#define HSM_DEBUG_NEWLINE()
+
+#define HSM_DEBUG_PRINTLN(s) (printf("%s\n", (s)))
 
 //#define HSM_DEBUG_PRINT_EVENT(e) (void(e))
 //#define HSM_DEBUG_PRINT_EVENT(e) (printf("%s-%s;", __func__, signalNames[(e)->signal]))

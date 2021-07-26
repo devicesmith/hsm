@@ -1,4 +1,4 @@
-#include "HSMFrameWork.h"
+#include "../inc/HSMFrameWork.h"
 
 #include <iostream>
 
@@ -10,7 +10,20 @@ stringify(INIT),
 stringify(SILENT),
 stringify(ENTRY),
 stringify(EXIT),
-stringify(INITIAL)
+stringify(INITIAL),
+stringify(A),
+stringify(B),
+stringify(C),
+stringify(D),
+stringify(E),
+stringify(F),
+stringify(G),
+stringify(H),
+stringify(I),
+stringify(J),
+stringify(K),
+stringify(L),
+stringify(TRANSITION),
 };
 
 //int signal_filter[10] = {1, 2, 3, 4, 5};
@@ -82,7 +95,7 @@ bool fifoPush(struct hsm_event* e)
 struct hsm_event* fifoPop(void)
 {
   semaphore_get();
-  hsm_event* e;
+  hsm_event* e = NULL;
 
   if(fifoData.size > 0)
   {
@@ -158,7 +171,7 @@ void hsmInitStateMachine(void)
 int hsmDiscoverHierarch(struct hsm_state* state, state_handler *path, int pathDepth)
 {
   //printf("==>hsmDiscoverHierarch<==\n");
-  if(!path || *path == 0)
+  if(!path)
   {
     return false;
   }
@@ -175,7 +188,7 @@ int hsmDiscoverHierarch(struct hsm_state* state, state_handler *path, int pathDe
     stateResult = currentState.stateHandler(&currentState, &baseSilentEvent);
   } while((stateResult == STATE_DO_SUPERSTATE) && (index < pathDepth));
 
-  HSM_DEBUG_NEWLINE();
+  //HSM_DEBUG_NEWLINE();
 
   return index;
 }
@@ -211,24 +224,23 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
 
   hsmHandleEvent(state, &baseInitialEvent);
 
-  state->stateHandler = stateHandler;
+  //state->stateHandler = stateHandler;
 }
 
 void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
 {
   //printf("==>hsmHandleEvent (%s)<==\n", signalNames[theEvent->signal]);
   hsm_state_result currentResult;
-  state_handler destinationHandler;
-  int index;
-  state_handler hierarchyPath[10];
-  state_handler currentHandler;
-  state_handler startHandler;
+  //state_handler destinationHandler;
+
+  state_handler hierarchyPath[10] = {};
 
   // remeber where we started from
-  startHandler = self->stateHandler;
+  state_handler startHandler = self->stateHandler;
 
   // While asked to do the super state, do it.
-  currentHandler = self->stateHandler;
+  // i.e. while event signal not handled
+  state_handler currentHandler = self->stateHandler;
   do
   {
     currentResult = currentHandler(self, theEvent);
@@ -239,26 +251,40 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
   if(currentResult == STATE_CHANGED)
   {
     // remember where we are going
-    destinationHandler = self->stateHandler;
+    state_handler destinationHandler = self->stateHandler;
 
     // Get hierarchy path of destination
-    index = hsmDiscoverHierarch(self, hierarchyPath,
-                                sizeof(hierarchyPath)/sizeof(*hierarchyPath));
+    // self->stateHandler points to destination state
+    hsmDiscoverHierarch(self, hierarchyPath,
+                        sizeof(hierarchyPath)/sizeof(*hierarchyPath));
 
-    // exit to parent state
+    // start with current state
     self->stateHandler = startHandler;
     do
     {
-      // state is in destination hierarchy, entry event on that state
-      index = hsmCheckForHandlerInPath(&(self->stateHandler),
-                                       hierarchyPath,
-                                       sizeof(hierarchyPath)/sizeof(*hierarchyPath));
+
+      int index = hsmCheckForHandlerInPath(&(self->stateHandler),
+                                           hierarchyPath,
+                                           sizeof(hierarchyPath)/sizeof(*hierarchyPath));
       if(index == 0)
       {
-        // We at the right state
+        // Destination is source, i.e. self transition
+        if (destinationHandler == self->stateHandler)
+        {
+          self->stateHandler(self, &baseExitEvent);
+          self->stateHandler(self, &baseEntryEvent);
+          self->stateHandler(self, &baseInitialEvent);
+        }
         break;
       }
-      else if( index > 0)
+      else if (index < 0)
+      {
+        // handler is not in heirarchy, so we are transitioning up to parent.
+        // exit current state, but don't need to enter new state.
+        self->stateHandler(self, &baseExitEvent);
+
+      }
+      else if( index > 0) // state is in destination hierarchy, entry event on that state
       {
         state_handler* currentLCAHandler = &(self->stateHandler);
         self->stateHandler = startHandler;
@@ -279,13 +305,8 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
         self->stateHandler = hierarchyPath[0];
         break;
       }
-      else
-      {
-        // handler is not in heirarchy, so we are transitioning up to parent.
-        // exit current state, but don't need to enter new state.
-        self->stateHandler(self, &baseExitEvent);
-      }
     } while(STATE_DO_SUPERSTATE == self->stateHandler(self, &baseSilentEvent));
+    //FIXME: self->stateHandler(self, &baseInitialEvent);
   }
   else
   {
@@ -302,6 +323,7 @@ void hsmProcess(struct hsm_state * self)
     theEvent = fifoPop();
     hsmHandleEvent(self, theEvent);
     hsmEventDelete(theEvent);
+    //HSM_DEBUG_NEWLINE();
   }
   else
   {
