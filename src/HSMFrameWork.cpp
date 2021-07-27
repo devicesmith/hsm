@@ -230,29 +230,30 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
 void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
 {
   //printf("==>hsmHandleEvent (%s)<==\n", signalNames[theEvent->signal]);
-  hsm_state_result currentResult;
-  //state_handler destinationHandler;
-
-  state_handler hierarchyPath[10] = {};
+  // remember where we are going
+  state_handler destinationHandler = self->stateHandler;
 
   // remeber where we started from
   state_handler startHandler = self->stateHandler;
 
+  state_handler stateWithSignalHandler = {};
+
+    hsm_state_result currentResult;
   // While asked to do the super state, do it.
   // i.e. while event signal not handled
   state_handler currentHandler = self->stateHandler;
   do
   {
+    stateWithSignalHandler = self->stateHandler;
     currentResult = currentHandler(self, theEvent);
     currentHandler = self->stateHandler;
   } while(currentResult == STATE_DO_SUPERSTATE);
 
+  state_handler hierarchyPath[10] = {};
+
   // State changed, figure out LCA and do the appropriate exit/entry events.
   if(currentResult == STATE_CHANGED)
   {
-    // remember where we are going
-    state_handler destinationHandler = self->stateHandler;
-
     // Get hierarchy path of destination
     // self->stateHandler points to destination state
     hsmDiscoverHierarch(self, hierarchyPath,
@@ -269,11 +270,10 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
       if(index == 0)
       {
         // Destination is source, i.e. self transition
-        if (destinationHandler == self->stateHandler)
+        if (currentHandler == stateWithSignalHandler)
         {
           self->stateHandler(self, &baseExitEvent);
           self->stateHandler(self, &baseEntryEvent);
-          self->stateHandler(self, &baseInitialEvent);
         }
         break;
       }
@@ -306,7 +306,9 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
         break;
       }
     } while(STATE_DO_SUPERSTATE == self->stateHandler(self, &baseSilentEvent));
-    //FIXME: self->stateHandler(self, &baseInitialEvent);
+
+    //self->stateHandler(self, &baseInitialEvent);
+
   }
   else
   {
@@ -322,6 +324,7 @@ void hsmProcess(struct hsm_state * self)
   {
     theEvent = fifoPop();
     hsmHandleEvent(self, theEvent);
+    hsmHandleEvent(self, &baseInitialEvent);
     hsmEventDelete(theEvent);
     //HSM_DEBUG_NEWLINE();
   }

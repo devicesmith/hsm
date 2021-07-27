@@ -9,14 +9,13 @@ public:
 	// Extend the base state variable
 	struct hsm_test_state : hsm_state
 	{
-		int extraStateInfo;
+    int foo;
 	} state;
 
 	// Extend the base event
 	struct hsm_test_event : hsm_event
 	{
 		int extraEventInfo;
-    int foo;
 	};
 
 	// Extend the signal
@@ -79,6 +78,7 @@ void TestHSM::InitStateMachine(struct hsm_state* state, state_handler initialSta
 	hsmEventQueueInit(hsmTestEventQueue, ARRAY_LENGTH(hsmTestEventQueue));
 	hsmInitStateMachine();
 	hsmInitialState(state, initialState);
+  ((hsm_test_state*)state)->foo = 0;
   //HSM_DEBUG_NEWLINE();
 }
 
@@ -102,7 +102,7 @@ hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
 		case TEST_SIG_E:
 			return CHANGE_STATE(self, &TestHSM::s11);
 		case TEST_SIG_I:
-      if (((TestHSM::hsm_test_event*)e)->foo == 1) ((TestHSM::hsm_test_event*)e)->foo = 0;
+      if (((TestHSM::hsm_test_state*)self)->foo == 1) ((TestHSM::hsm_test_state*)self)->foo = 0;
       return HANDLE_STATE();
 		//case TEST_SIG_TRANSITION:
 		//	return CHANGE_STATE(self, &TestHSM::state0);
@@ -128,8 +128,8 @@ hsm_state_result TestHSM::s1(struct hsm_state* self, struct hsm_event const * hs
     case TEST_SIG_C:
       return CHANGE_STATE(self, &TestHSM::s2);
     case TEST_SIG_D:
-      if (((TestHSM::hsm_test_event*)hsmEvent)->foo == 0) {
-        ((TestHSM::hsm_test_event*)hsmEvent)->foo = 1;
+      if (((TestHSM::hsm_test_state*)self)->foo == 0) {
+        ((TestHSM::hsm_test_state*)self)->foo = 1;
         return CHANGE_STATE(self, &TestHSM::s0);
       }
       return HANDLE_STATE();
@@ -153,12 +153,12 @@ hsm_state_result TestHSM::s11(struct hsm_state* self, struct hsm_event const * h
     case HSM_SIG_INITIAL:
       return HANDLE_STATE();
     case TEST_SIG_D:
-      if (((hsm_test_event*)hsmEvent)->foo == 1)
+      if (((hsm_test_state*)self)->foo == 1)
       {
-        ((TestHSM::hsm_test_event*)hsmEvent)->foo = 0;
+        ((TestHSM::hsm_test_state*)self)->foo = 0;
         return CHANGE_STATE(self, &TestHSM::s1);
       }
-      return HANDLE_STATE();
+      break; // pass to superstate
     case TEST_SIG_G:
       return CHANGE_STATE(self, &TestHSM::s211);
     case TEST_SIG_H:
@@ -219,6 +219,11 @@ hsm_state_result TestHSM::s2(struct hsm_state* self, struct hsm_event const * hs
       return CHANGE_STATE(self, &TestHSM::s1);
     case TEST_SIG_F:
       return CHANGE_STATE(self, &TestHSM::s11);
+    case TEST_SIG_I:
+      if (((TestHSM::hsm_test_state*)self)->foo == 0){
+        ((TestHSM::hsm_test_state*)self)->foo = 1;
+      }
+      return HANDLE_STATE();
   }
   return HANDLE_SUPER_STATE(self, &TestHSM::s0);
 }
@@ -240,6 +245,8 @@ hsm_state_result TestHSM::s21(struct hsm_state* self, struct hsm_event const * h
       return CHANGE_STATE(self, &TestHSM::s21);
     case TEST_SIG_B:
       return CHANGE_STATE(self, &TestHSM::s211);
+    case TEST_SIG_G:
+      return CHANGE_STATE(self, &TestHSM::s1);
   }
   return HANDLE_SUPER_STATE(self, &TestHSM::s2);
 }
@@ -405,7 +412,7 @@ TEST_CASE("Two")
 
   SECTION("Initial State")
   {
-    //testHSM
+    HSM_DEBUG_PRINTLN("==> Init to s0");
     REQUIRE(true);
     testHSM.InitStateMachine(&testHSM.state, &testHSM.s0);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
@@ -416,6 +423,7 @@ TEST_CASE("Two")
 
   SECTION("Ignored event")
   {
+    HSM_DEBUG_PRINTLN("==> Init to s0, Signal J (ignored)");
     testHSM.InitStateMachine(&testHSM.state, &testHSM.s0);
     TestHSM::hsm_test_event* e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_J;
@@ -432,10 +440,12 @@ TEST_CASE("Full Transition Test")
 
   SECTION("From s2")
   {
+    HSM_DEBUG_PRINTLN("==> Init to s2");
     testHSM.InitStateMachine(&testHSM.state, &testHSM.s2);
     HSM_DEBUG_NEWLINE();
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
 
+    HSM_DEBUG_PRINTLN("==> s211 Signal G");
     TestHSM::hsm_test_event* e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_G;
     fifoPush(e);
@@ -443,6 +453,7 @@ TEST_CASE("Full Transition Test")
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     HSM_DEBUG_NEWLINE();
 
+    HSM_DEBUG_PRINTLN("==> s11 Signal I");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_I;
     fifoPush(e);
@@ -450,6 +461,7 @@ TEST_CASE("Full Transition Test")
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     HSM_DEBUG_NEWLINE();
 
+    HSM_DEBUG_PRINTLN("==> s11 Signal A");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_A;
     fifoPush(e);
@@ -457,5 +469,12 @@ TEST_CASE("Full Transition Test")
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     HSM_DEBUG_NEWLINE();
 
+    HSM_DEBUG_PRINTLN("==> s11 Signal D");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_D;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+    HSM_DEBUG_NEWLINE();
   }
 }
