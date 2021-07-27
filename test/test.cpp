@@ -476,5 +476,37 @@ TEST_CASE("Full Transition Test")
     hsmProcess(&testHSM.state);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_PRINTLN("==> s11 second Signal D");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_D;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+    HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_PRINTLN("==> s11 Signal C");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_C;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+    HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_PRINTLN("==> s211 Signal E");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_E;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+    HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_PRINTLN("==> s11 2nd Signal E");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_E;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+    HSM_DEBUG_NEWLINE();
   }
 }

@@ -229,16 +229,11 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
 
 void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
 {
-  //printf("==>hsmHandleEvent (%s)<==\n", signalNames[theEvent->signal]);
-  // remember where we are going
-  state_handler destinationHandler = self->stateHandler;
-
-  // remeber where we started from
+  // remember where we started from
+  state_handler stateWithSignalHandler = {};
   state_handler startHandler = self->stateHandler;
 
-  state_handler stateWithSignalHandler = {};
-
-    hsm_state_result currentResult;
+  hsm_state_result currentResult;
   // While asked to do the super state, do it.
   // i.e. while event signal not handled
   state_handler currentHandler = self->stateHandler;
@@ -306,9 +301,6 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
         break;
       }
     } while(STATE_DO_SUPERSTATE == self->stateHandler(self, &baseSilentEvent));
-
-    //self->stateHandler(self, &baseInitialEvent);
-
   }
   else
   {
