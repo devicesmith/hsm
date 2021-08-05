@@ -100,9 +100,15 @@ hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
 		case HSM_SIG_INITIAL:
       return CHANGE_STATE(self, &TestHSM::s11);
 		case TEST_SIG_E:
+      printf("==>s0 Signal E stuff\nChange to s11\n");
 			return CHANGE_STATE(self, &TestHSM::s11);
 		case TEST_SIG_I:
-      if (((TestHSM::hsm_test_state*)self)->foo == 1) ((TestHSM::hsm_test_state*)self)->foo = 0;
+      if (((TestHSM::hsm_test_state*)self)->foo == 1) {
+        HSM_DEBUG_PRINTLN("(foo == 1), foo = 0");
+        ((TestHSM::hsm_test_state*)self)->foo = 0;
+      } else {
+        HSM_DEBUG_PRINTLN("(foo == 0), do nothing");
+      }
       return HANDLE_STATE();
 		//case TEST_SIG_TRANSITION:
 		//	return CHANGE_STATE(self, &TestHSM::state0);
@@ -129,8 +135,11 @@ hsm_state_result TestHSM::s1(struct hsm_state* self, struct hsm_event const * hs
       return CHANGE_STATE(self, &TestHSM::s2);
     case TEST_SIG_D:
       if (((TestHSM::hsm_test_state*)self)->foo == 0) {
+        HSM_DEBUG_PRINTLN("(foo == 0), foo = 1");
         ((TestHSM::hsm_test_state*)self)->foo = 1;
         return CHANGE_STATE(self, &TestHSM::s0);
+      } else {
+        HSM_DEBUG_PRINTLN("(foo == 1), do nothing");
       }
       return HANDLE_STATE();
     case TEST_SIG_F:
@@ -151,12 +160,17 @@ hsm_state_result TestHSM::s11(struct hsm_state* self, struct hsm_event const * h
     case HSM_SIG_EXIT:
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
+      printf("==>s11 initial\nHandled!");
       return HANDLE_STATE();
     case TEST_SIG_D:
       if (((hsm_test_state*)self)->foo == 1)
       {
+        HSM_DEBUG_PRINTLN("(foo == 1) - change to s1");
         ((TestHSM::hsm_test_state*)self)->foo = 0;
         return CHANGE_STATE(self, &TestHSM::s1);
+      }
+      else {
+        HSM_DEBUG_PRINTLN("(foo == 0) - do nothing");
       }
       break; // pass to superstate
     case TEST_SIG_G:
@@ -220,8 +234,11 @@ hsm_state_result TestHSM::s2(struct hsm_state* self, struct hsm_event const * hs
     case TEST_SIG_F:
       return CHANGE_STATE(self, &TestHSM::s11);
     case TEST_SIG_I:
-      if (((TestHSM::hsm_test_state*)self)->foo == 0){
+      if (((TestHSM::hsm_test_state*)self)->foo == 0) {
+        HSM_DEBUG_PRINTLN("(foo == 0), foo = 1");
         ((TestHSM::hsm_test_state*)self)->foo = 1;
+      } else {
+        HSM_DEBUG_PRINTLN("(foo == 1), do nothing ");
       }
       return HANDLE_STATE();
   }
@@ -371,6 +388,7 @@ hsm_state_result TestHSM::state3(struct hsm_state* self, struct hsm_event const 
 //
 // Test Cases
 //
+#if 0
 TEST_CASE("Framework")
 {
 
@@ -413,7 +431,6 @@ TEST_CASE("Two")
   SECTION("Initial State")
   {
     HSM_DEBUG_PRINTLN("==> Init to s0");
-    REQUIRE(true);
     testHSM.InitStateMachine(&testHSM.state, &testHSM.s0);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     hsmProcess(&testHSM.state);
@@ -433,6 +450,7 @@ TEST_CASE("Two")
     HSM_DEBUG_NEWLINE();
   }
 }
+#endif
 
 TEST_CASE("Full Transition Test")
 {
@@ -505,7 +523,11 @@ TEST_CASE("Full Transition Test")
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_E;
     fifoPush(e);
+
     hsmProcess(&testHSM.state);
+
+    HSM_DEBUG_PRINTLN("\nShould be: s11-Exit;s1-EXIT;s1-ENTRY;s11-ENTRY;");
+
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     HSM_DEBUG_NEWLINE();
   }

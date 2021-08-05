@@ -23,7 +23,7 @@ stringify(I),
 stringify(J),
 stringify(K),
 stringify(L),
-stringify(TRANSITION),
+stringify(TRANSITION)
 };
 
 //int signal_filter[10] = {1, 2, 3, 4, 5};
@@ -223,8 +223,6 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler)
   } while(path[index] != endHandler);
 
   hsmHandleEvent(state, &baseInitialEvent);
-
-  //state->stateHandler = stateHandler;
 }
 
 void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
@@ -249,6 +247,8 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
   // State changed, figure out LCA and do the appropriate exit/entry events.
   if(currentResult == STATE_CHANGED)
   {
+    state_handler finishHandler = self->stateHandler;
+
     // Get hierarchy path of destination
     // self->stateHandler points to destination state
     hsmDiscoverHierarch(self, hierarchyPath,
@@ -258,11 +258,15 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
     self->stateHandler = startHandler;
     do
     {
-
       int index = hsmCheckForHandlerInPath(&(self->stateHandler),
                                            hierarchyPath,
                                            sizeof(hierarchyPath)/sizeof(*hierarchyPath));
-      if(index == 0)
+      int lcaIndex = hsmCheckForHandlerInPath(&(stateWithSignalHandler),
+                                           hierarchyPath,
+                                           sizeof(hierarchyPath)/sizeof(*hierarchyPath));
+
+      //if(index == 0)
+      if( (index == 0) && (finishHandler != startHandler) )
       {
         // Destination is source, i.e. self transition
         if (currentHandler == stateWithSignalHandler)
@@ -270,7 +274,7 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
           self->stateHandler(self, &baseExitEvent);
           self->stateHandler(self, &baseEntryEvent);
         }
-        break;
+        //break;
       }
       else if (index < 0)
       {
@@ -279,13 +283,18 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
         self->stateHandler(self, &baseExitEvent);
 
       }
-      else if( index > 0) // state is in destination hierarchy, entry event on that state
+      else if(
+        (index > 0) ||
+        ((index == 0) && (finishHandler == startHandler))
+      ) // state is in destination hierarchy, entry event on that state
       {
-        state_handler* currentLCAHandler = &(self->stateHandler);
+        //state_handler* currentLCAHandler = &(self->stateHandler);
+        state_handler currentLCAHandler = stateWithSignalHandler;
         self->stateHandler = startHandler;
 
         // Do Exit Events up to LCA on current side.
-        while(self->stateHandler != *currentLCAHandler)
+        //while(self->stateHandler != *currentLCAHandler)
+        while(self->stateHandler != currentLCAHandler)
         {
           self->stateHandler(self, &baseExitEvent);
           self->stateHandler(self, &baseSilentEvent);
@@ -293,7 +302,7 @@ void hsmHandleEvent(struct hsm_state *self, struct hsm_event * theEvent)
 
         // Do Entry Events down from LCA on destination side.
         int entryIndex;
-        for(entryIndex = index-1; entryIndex >= 0; entryIndex--)
+        for(entryIndex = lcaIndex-1; entryIndex >= 0; entryIndex--)
         {
           hierarchyPath[entryIndex](self, &baseEntryEvent);
         }
