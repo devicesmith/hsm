@@ -307,21 +307,20 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
 
     // Get hierarchy path of destination
     // self->stateHandler points to destination state
+    struct hsm_state beginState {};
+    beginState.stateHandler = beginStateHandler;
+    int exitDepth = hsmDiscoverHierarch(&beginState, exitHierarchyPath, ARRAY_LENGTH(exitHierarchyPath));
+
     struct hsm_state endState {};
     endState.stateHandler = endStateHandler;
     int entryDepth = hsmDiscoverHierarch(&endState, entryHierarchyPath, ARRAY_LENGTH(entryHierarchyPath));
 
-    struct hsm_state eventState {};
-    eventState.stateHandler = eventStateHandler;
-    int exitDepth = hsmDiscoverHierarch(&eventState, exitHierarchyPath, ARRAY_LENGTH(exitHierarchyPath));
+    //struct hsm_state eventState {};
+    //eventState.stateHandler = eventStateHandler;
+    //hsmDiscoverHierarch(&eventState, exitHierarchyPath, ARRAY_LENGTH(exitHierarchyPath));
 
     bool sameHeirarchy = hsmCheckForSameHierarchy(exitHierarchyPath, exitDepth, entryHierarchyPath, entryDepth);
-      //state_handler* path, int pathDepth)
 
-    struct hsm_state beginState {};
-    beginState.stateHandler = beginStateHandler;
-    hsmDiscoverHierarch(&beginState, exitHierarchyPath,
-                        sizeof(exitHierarchyPath)/sizeof(*exitHierarchyPath));
 
     int beginStateInEntryPos = hsmCheckForHandlerInPath(&(beginState.stateHandler), entryHierarchyPath,
                                                     sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
@@ -331,8 +330,8 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
                                                     sizeof(exitHierarchyPath)/sizeof(*exitHierarchyPath));
     int endStateInEntryPos = hsmCheckForHandlerInPath(&(endState.stateHandler), entryHierarchyPath,
                                                     sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
-    int eventStateInEntryPos = hsmCheckForHandlerInPath(&(eventState.stateHandler), entryHierarchyPath,
-                                                    sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
+    //int eventStateInEntryPos = hsmCheckForHandlerInPath(&(eventState.stateHandler), entryHierarchyPath,
+    //                                                sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
 
     //if(beginStateInEntryPos >= 0 && beginStateInExitPos >= 0) // No LCA will be needed
     if(sameHeirarchy)
@@ -379,15 +378,37 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
       }
       else if(endStateHandler == beginStateHandler) // self transition
       {
-        self->stateHandler(self, &baseExitEvent);
-        HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseExitEvent);
-        self->stateHandler(self, &baseEntryEvent);
-        HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
+        // TODO: Test this. This is where you are!
+        if(exitDepth > 0)
+        {
+          self->stateHandler = beginStateHandler;
+          int depth = exitDepth;
+          do
+          {
+            self->stateHandler(self, &baseExitEvent);
+            HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseExitEvent);
+            self->stateHandler(self, &baseSilentEvent);
+          } while(depth-- > 0);
+
+          // for(int entryIndex = beginStateInEntryPos - 1; self->stateHandler != endStateHandler; entryIndex--)
+          // {
+          //   self->stateHandler = entryHierarchyPath[entryIndex];
+          //   currentResult = self->stateHandler(self, &baseEntryEvent);
+          //   HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
+          // }
+        }
+        else
+        {
+          self->stateHandler(self, &baseExitEvent);
+          HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseExitEvent);
+          self->stateHandler(self, &baseEntryEvent);
+          HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
+        }
       }
     }
     else // exits until LCR or eventHandler
     {
-      // Move up unti at LCA
+      // Move up until at LCA
       self->stateHandler = beginStateHandler;
       do
       {
@@ -397,7 +418,12 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
       } while( hsmCheckForHandlerInPath(&(self->stateHandler),entryHierarchyPath,
                                         ARRAY_LENGTH(entryHierarchyPath)) < 0 );
 
-      for(int entryIndex = 0; self->stateHandler != endStateHandler; entryIndex++)
+      // At LCA. Find where to start
+      int entryStart = hsmCheckForHandlerInPath(&(self->stateHandler), entryHierarchyPath,
+                                                ARRAY_LENGTH(entryHierarchyPath));
+      entryStart--;
+
+      for(int entryIndex = entryStart; self->stateHandler != endStateHandler; entryIndex--)
       {
         self->stateHandler = entryHierarchyPath[entryIndex];
         HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
