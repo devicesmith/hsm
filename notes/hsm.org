@@ -1,0 +1,179 @@
+#+TITLE: HSM Development Notes
+#+AUTHOR: Matt McFadden
+
+
+* Project TODOs [3/5]
+- [ ] Add check for state transition to testing
+- [X] Figure out plantuml in org mode
+- [X] Create hypothetical state machine diagram
+- [ ] Analyze process function. Get it working
+- [X] Get back into Org mode the document this project
+
+
+* State diagram
+#+begin_src plantuml :file hsm-hypothetical.png
+title HSM hypothetical Diagram
+
+@startuml
+
+
+state Root {
+        Root : / me->foo = 0
+        [*] --> S2
+
+        state S0 {
+                S0 : entry /
+                S0 : exit /
+                S0 : I [self->foo] / self->foo = 0;
+
+                [*] --> S11
+                S0 --> S11 : E
+
+                state S1 {
+                        S1 : entry /
+                        S1 : exit /
+
+                        [*] --> S11
+                        S1 --> S1 : A
+                        S1 --> S11 : B
+                        S1 --> S2 : C
+                        S1 --> S0 : D [!me->foo]/me->foo=1;
+                        S1 --> S211 : F
+
+                        state S11 {
+                                S11 : entry /
+                                S11 : exit /
+
+                                S11 --> S1 : D [me->foo]/me->foo = 0;
+                                S11 --> S0 : H
+                                S11 --> S211 : G
+                        }
+                }
+
+                state S2 {
+                        S2 : entry /
+                        S2 : exit /
+                        S2 : I [!me->foo]/me->foo = 1;
+
+                        [*] --> S211
+                        S2 --> S1 : C
+                        S2 --> S11 : F
+
+                        state S21 {
+                                S21 : entry /
+                                S21 : exit /
+
+                                [*] --> S211
+                                S21 --> S21 : A
+                                S21 --> S211 : B
+                                S21 --> S1 : G
+
+                                state S211 {
+                                        S211 : entry /
+                                        S211 : exit /
+
+                                        S211 --> S21 : D
+                                        S211 --> S0 : H
+
+                                }
+                        }
+                }
+        }
+}
+@enduml
+#+end_src
+
+* State Transitions (hsmHandleEvent())
+** First Transition - Event G
+- beginStateHandler
+  + S211
+- endStateHandler
+  + S1, then S11 due to initial
+- eventHandler
+  + S21, the state that handled the event. This event is in the begin state's hierarchy.
+- lca state
+  + S0, the state that is in both the begin state hierarchy and the end state hierarchy.
+- exitHierarchy[]
+- entryHierarchy[]
+- Path:
+  - S211-Exit; S21-Exit; S2-Exit; <LCA-S0>; S1-Entry; S1-Initial; S11-Entry
+- Algorithm:
+  1. Send event to current begin state (starts as S211), until STATE_CHANGED is returned.
+     a. current state gets updated to point up the hierarchy until the event is handled.
+     b. when done, current state points to end state (S1) because it is updated by the CHANGE_STATE macro in the state implementation.
+  2. Find Least Common Ancestor (LCA)
+     a. Set endStateHandler to currentHandler, since currentHandler points to the state that was transitioned to.
+     b. Fill entryHierarchy[] with discovered hierarchy from endStateHandler up to root.
+     c. set currentStateHandler to beginStateHandler (S211).
+     d. Send exit event to currentStateHandler (starts at S211), until currentStateHandler is in the current begin hierarchy.
+     e. This is the Least Common Ancestor state (LCA).
+  3. Call entry event from currentStateHandler to end state.
+     a. reverse walk entryHierarchy[]
+
+- Walk Through
+  1. Check for STATE_CHANGED
+     - Event: G
+     - beginState: S211
+     - endState: S1
+     - handlerState: S21
+     - currentState: S211, S21->S1
+  2. Find LCA
+     - endStateHandler : S1
+     - entryHierarchy : S1, S0, root
+     - S211-Exit; S21-Exit; See S0 as LCA; entryHierarchy[0]->S1
+     - S1-Initial; S11-Entry
+
+
+1. send event to currentState until CHANGE_STATE
+2. change state up, down, or across?
+   a. up - exit until at endState
+   b. down - enter until at endState
+   c. across - exit to LCA, enter until at endState
+3. find entryHierarchy[] from endState to root
+4. find exitHierarchy[] from eventHandler to root
+5. if endState in exitHierarchy[] at or above - up
+6. if endState in exitHierarchy[] at or below - down
+7. if endState in entryHierarchy[] across
+8. if up, do exit starting at startHandler from exitHierarchy[] going up.
+9. if down, do exit starting at startHandler from exitHierarchy[] dowing down.
+10. if across do exit to LCA from exitHierarchy[] up, then entry to endState from entryHierarchy[] going down
+11.
+
+
+
+1. There are 2 hierarchies, entryHierarchy and exitHierarchy.
+2. entryHierarchy will have the endState
+   a. entryHierarchy starts with endState
+3. exitHierarchy will have the beginState
+   a. exitHierarchy starts with beginState
+4. Hierarchies could be the same.
+5. if beginState is in both entryHierarchy and exitHierarchy, then
+   a. hierarchies are the same
+   b. no need to transition through an LCA.
+   c. if beginState < endState
+      - exitHierarchy to endState
+   d. else
+      - enter entryHierarchy to end
+6. else if beginState is not in entryHierarchy, but in exitHierarchy, then
+   a. beginState could be below endState (and not seen)
+   b.
+7. else
+   a. find first state common to both entryHierarchy and exitHierarchy
+      - this is the LCA
+   b. exitHierarchy to LCA
+   c. entryHierarchy to endState
+
+* If in same H
+** if beginState is below endState in exitHierarchy
+*** Move up: do exit from begin to end until at endState in exitHierarchy (exitHierarchy will be longer)
+**** if endState == eventState // self transistion
+***** do exit, do enter
+** else if endState is below beginState in entryHierarchy
+*** Move down: do entry from begin to end until at endState in entryHierarchy (entryHierarchy will be longer and have all the needed states)
+**** if endState == eventState // self transistion
+***** do exit, do enter
+** else if beginState == endState
+*** Self transition: do exit, do enter
+* else
+** do exit from beginState from exitHierarchy until currentState is in entryHierarchy
+** do entry from currentState from entryHierarchy until currentState == endState

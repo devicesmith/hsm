@@ -5,8 +5,12 @@
 
 class TestHSM
 {
-public:
-	// Extend the base state variable
+  public:
+    state_handler *transition_history;
+    struct hsm_event *event_history;
+    int *ti;
+
+  // Extend the base state variable
 	struct hsm_test_state : hsm_state
 	{
     int foo;
@@ -457,6 +461,9 @@ TEST_CASE("Two")
 TEST_CASE("Full Transition Test")
 {
   TestHSM testHSM;
+  testHSM.ti = &_ti;
+  testHSM.transition_history = transition_history;
+  testHSM.event_history      = event_history;
 
   SECTION("From s2")
   {
@@ -470,7 +477,6 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[3] == testHSM.s2); // 2nd for init event
     REQUIRE(transition_history[4] == testHSM.s21);
     REQUIRE(transition_history[5] == testHSM.s211);
-    REQUIRE(transition_history[6] == testHSM.s211); // initial event
     HSM_DEBUG_NEWLINE();
 
     HSM_DEBUG_LOG_ZERO(transition_history);
@@ -488,7 +494,6 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[3] == testHSM.s1);
     REQUIRE(transition_history[4] == testHSM.s1);
     REQUIRE(transition_history[5] == testHSM.s11);
-    REQUIRE(transition_history[6] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
 
     HSM_DEBUG_LOG_ZERO(transition_history);
@@ -514,7 +519,6 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[2] == testHSM.s1);
     REQUIRE(transition_history[3] == testHSM.s1);
     REQUIRE(transition_history[4] == testHSM.s11);
-    REQUIRE(transition_history[5] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
 
     HSM_DEBUG_LOG_ZERO(transition_history);
@@ -524,6 +528,13 @@ TEST_CASE("Full Transition Test")
     fifoPush(e);
     hsmProcess(&testHSM.state);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+    REQUIRE(transition_history[0] == testHSM.s11);
+    REQUIRE(transition_history[1] == testHSM.s1);
+    REQUIRE(transition_history[2] == testHSM.s0);
+    REQUIRE(transition_history[3] == testHSM.s1);
+    REQUIRE(transition_history[4] == testHSM.s11);
+    REQUIRE(transition_history[5] == testHSM.s11);
+
     HSM_DEBUG_NEWLINE();
 
     HSM_DEBUG_LOG_ZERO(transition_history);

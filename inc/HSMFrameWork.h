@@ -85,9 +85,12 @@ void hsmEventDelete(void *);
 #define HSM_DEBUG_LOGGING
 #ifdef HSM_DEBUG_LOGGING
 
+#define HISTORY_LENGTH 20
+
 extern int signal_filter[10];
 extern bool print_signal;
-extern state_handler transition_history[20];
+extern state_handler transition_history[HISTORY_LENGTH];
+extern struct hsm_event event_history[HISTORY_LENGTH];
 extern int _ti;
 
 //#define HSM_DEBUG_PRINT_HANDLER(x) ({if(print_signal) printf("%s:[%s];", __func__, (x));})
@@ -102,13 +105,17 @@ extern int _ti;
 //#define HSM_DEBUG_PRINT_EVENT(e) (printf("%s-%s;", __func__, signalNames[(e)->signal]))
 #define HSM_DEBUG_PRINT_EVENT(e) { \
 	int *f = std::find(std::begin(signal_filter), std::end(signal_filter), (e)->signal); \
-	print_signal = (f == std::end(signal_filter)); \
+	print_signal = (f == std::end(signal_filter));                      \
 	if (print_signal) printf("%s-%s;", __func__, signalNames[(e)->signal]); }
 
-#define HSM_DEBUG_LOG_TRANSITION(sH) transition_history[_ti++] = (sH)
+#define HSM_DEBUG_LOG_TRANSITION(sH, e) {           \
+        event_history[_ti].signal = (e)->signal;    \
+        transition_history[_ti++] = (sH);           \
+    }
+
 #define HSM_DEBUG_LOG_ZERO(sH) {                            \
     _ti = 0;                                                \
-    for(int i=0; i < ARRAY_LENGTH(transition_history); i++) \
+    for(int i = 0; i < HISTORY_LENGTH; i++) \
     {                                                       \
         transition_history[i] = {};                         \
     }                                                       \
