@@ -1,4 +1,3 @@
-
 #include "inc.hpp"
 #include <iostream>
 
@@ -9,7 +8,7 @@
 
 #include <time.h>
 
-#include "protohsm.h"
+#include "HSMFrameWork.h"
 
 using namespace std;
 
@@ -39,6 +38,14 @@ int _kbhit() {
 
     return select(STDIN + 1, &rdset, NULL, NULL, &timeout);
 }
+
+int main(int argc, char ** argv)
+{
+
+    return 0;
+}
+
+#if 0
 
 int GetButtonInput() {
 	if (_kbhit()) {
@@ -154,3 +161,4 @@ int main(int argc, char** argv) {
 
   return 0;
 }
+#endif

@@ -10,58 +10,81 @@ class TestHSM
     struct hsm_event *event_history;
     int *ti;
 
-  // Extend the base state variable
-	struct hsm_test_state : hsm_state
-	{
-    int foo;
-	} state;
+    // Extend the base state variable
+    struct hsm_test_state : hsm_state
+    {
+      int foo;
+    } state;
 
-	// Extend the base event
-	struct hsm_test_event : hsm_event
-	{
-		int extraEventInfo;
-	};
+    // Extend the base event
+    struct hsm_test_event : hsm_event
+    {
+      int extraEventInfo;
+    };
 
-	// Extend the signal
-	enum hsm_test_signal
-	{
-		TEST_SIG_A = HSM_SIG_USER,
-		TEST_SIG_B,
-		TEST_SIG_C,
-		TEST_SIG_D,
-		TEST_SIG_E,
-		TEST_SIG_F,
-		TEST_SIG_G,
-		TEST_SIG_H,
-		TEST_SIG_I,
-		TEST_SIG_J,
-		TEST_SIG_K,
-		TEST_SIG_L,
-		TEST_SIG_TRANSITION,
-		TEST_SIG_LAST
-	};
+    // Extend the signal
+    enum hsm_test_signal
+    {
+      TEST_SIG_A = HSM_SIG_USER,
+      TEST_SIG_B,
+      TEST_SIG_C,
+      TEST_SIG_D,
+      TEST_SIG_E,
+      TEST_SIG_F,
+      TEST_SIG_G,
+      TEST_SIG_H,
+      TEST_SIG_I,
+      TEST_SIG_J,
+      TEST_SIG_K,
+      TEST_SIG_L,
+      TEST_SIG_TRANSITION,
+      TEST_SIG_LAST
+    };
 
-	// Init our test machine
-	//void InitStateMachine(hsm_test_state * initialState);
-	void InitStateMachine(hsm_state * state, state_handler initialState);
+    // Init our test machine
+    void InitStateMachine(hsm_state * state, state_handler initialState);
 
-	// States in test
-	static hsm_state_result RootState(struct hsm_state *self, struct hsm_event const *e);
-	static hsm_state_result s0(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s1(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s11(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s12(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s13(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s2(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s21(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s211(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result s22(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  // States in test
+  static hsm_state_result RootState(struct hsm_state *self, struct hsm_event const *e);
+  static hsm_state_result s0(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s1(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s11(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s12(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s13(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s2(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s21(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s211(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result s22(struct hsm_state* self, struct hsm_event const * hsmEvent);
 
-	static hsm_state_result state0(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result state1(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result state2(struct hsm_state* self, struct hsm_event const * hsmEvent);
-	static hsm_state_result state3(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result state0(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result state1(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result state2(struct hsm_state* self, struct hsm_event const * hsmEvent);
+  static hsm_state_result state3(struct hsm_state* self, struct hsm_event const * hsmEvent);
 
+};
+
+// For debugging
+#define stringify( name ) # name
+const char* signalNames[] = {
+stringify(UNKNOWN),
+stringify(INIT),
+stringify(SILENT),
+stringify(ENTRY),
+stringify(EXIT),
+stringify(INITIAL),
+stringify(A),
+stringify(B),
+stringify(C),
+stringify(D),
+stringify(E),
+stringify(F),
+stringify(G),
+stringify(H),
+stringify(I),
+stringify(J),
+stringify(K),
+stringify(L),
+stringify(TRANSITION)
 };
 
 //
@@ -96,18 +119,17 @@ extern const char* signalNames[];
 hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
 {
   HSM_DEBUG_PRINT_EVENT(e);
-	switch(e->signal)
-	{
-		case HSM_SIG_ENTRY:
-			return HANDLE_STATE();
-		case HSM_SIG_EXIT:
-			return HANDLE_STATE();
-		case HSM_SIG_INITIAL:
+  switch(e->signal)
+  {
+    case HSM_SIG_ENTRY:
+      return HANDLE_STATE();
+    case HSM_SIG_EXIT:
+      return HANDLE_STATE();
+    case HSM_SIG_INITIAL:
       return CHANGE_STATE(self, &TestHSM::s11);
-		case TEST_SIG_E:
-      printf("==>s0 Signal E stuff\nChange to s11\n");
-			return CHANGE_STATE(self, &TestHSM::s11);
-		case TEST_SIG_I:
+    case TEST_SIG_E:
+      return CHANGE_STATE(self, &TestHSM::s11);
+    case TEST_SIG_I:
       if (((TestHSM::hsm_test_state*)self)->foo == 1) {
         HSM_DEBUG_PRINTLN("(foo == 1), foo = 0");
         ((TestHSM::hsm_test_state*)self)->foo = 0;
@@ -115,10 +137,8 @@ hsm_state_result TestHSM::s0(struct hsm_state* self, struct hsm_event const * e)
         HSM_DEBUG_PRINTLN("(foo == 0), do nothing");
       }
       return HANDLE_STATE();
-		//case TEST_SIG_TRANSITION:
-		//	return CHANGE_STATE(self, &TestHSM::state0);
-	}
-	return HANDLE_SUPER_STATE(self, &TestHSM::RootState);
+  }
+  return HANDLE_SUPER_STATE(self, &TestHSM::RootState);
 }
 
 hsm_state_result TestHSM::s1(struct hsm_state* self, struct hsm_event const * hsmEvent)
@@ -165,7 +185,6 @@ hsm_state_result TestHSM::s11(struct hsm_state* self, struct hsm_event const * h
     case HSM_SIG_EXIT:
       return HANDLE_STATE();
     case HSM_SIG_INITIAL:
-      printf("==>s11 initial\nHandled!");
       return HANDLE_STATE();
     case TEST_SIG_D:
       if (((hsm_test_state*)self)->foo == 1)
@@ -242,10 +261,11 @@ hsm_state_result TestHSM::s2(struct hsm_state* self, struct hsm_event const * hs
       if (((TestHSM::hsm_test_state*)self)->foo == 0) {
         HSM_DEBUG_PRINTLN("(foo == 0), foo = 1");
         ((TestHSM::hsm_test_state*)self)->foo = 1;
+        return HANDLE_STATE();
       } else {
         HSM_DEBUG_PRINTLN("(foo == 1), do nothing ");
       }
-      return HANDLE_STATE();
+      HANDLE_SUPER_STATE(self, &TestHSM::s0);
   }
   return HANDLE_SUPER_STATE(self, &TestHSM::s0);
 }
@@ -606,6 +626,28 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[2] == testHSM.s2);
     REQUIRE(transition_history[3] == testHSM.s21);
     REQUIRE(transition_history[4] == testHSM.s211);
+    HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_LOG_ZERO(transition_history);
+    HSM_DEBUG_PRINTLN("==> s211 Signal I");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_I;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+    //REQUIRE(transition_history[0] == testHSM.s11);
+    //REQUIRE(transition_history[1] == testHSM.s1);
+    HSM_DEBUG_NEWLINE();
+
+    HSM_DEBUG_LOG_ZERO(transition_history);
+    HSM_DEBUG_PRINTLN("==> s211 2nd Signal I");
+    e = (TestHSM::hsm_test_event*)hsmEventNew();
+    e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_I;
+    fifoPush(e);
+    hsmProcess(&testHSM.state);
+    REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+    //REQUIRE(transition_history[0] == testHSM.s11);
+    //REQUIRE(transition_history[1] == testHSM.s1);
     HSM_DEBUG_NEWLINE();
 
 

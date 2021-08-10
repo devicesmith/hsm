@@ -2,30 +2,6 @@
 
 #include <iostream>
 
-// Must match enum
-#define stringify( name ) # name
-const char* signalNames[] = {
-stringify(UNKNOWN),
-stringify(INIT),
-stringify(SILENT),
-stringify(ENTRY),
-stringify(EXIT),
-stringify(INITIAL),
-stringify(A),
-stringify(B),
-stringify(C),
-stringify(D),
-stringify(E),
-stringify(F),
-stringify(G),
-stringify(H),
-stringify(I),
-stringify(J),
-stringify(K),
-stringify(L),
-stringify(TRANSITION)
-};
-
 //int signal_filter[10] = {1, 2, 3, 4, 5};
 int signal_filter[10] = {2};
 
@@ -125,7 +101,7 @@ bool hsmEventPoolInit(hsm_event * eventArray, int arrayLength)
   return true;
 }
 
-bool hsmEventQueueInit(hsm_event ** eventQueueArray, int arrayLength)
+bool hsmEventQueueInit(struct hsm_event ** eventQueueArray, int arrayLength)
 {
   fifoInit(eventQueueArray, arrayLength);
 

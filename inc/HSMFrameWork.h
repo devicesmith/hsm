@@ -2,12 +2,13 @@
 #define __HSMFRAMEWORK_H__
 
 #include <stdbool.h>
+#include <algorithm> // for find
 
 #define ARRAY_LENGTH(array) (sizeof(array)/sizeof(*(array)))
 
 typedef enum
 {
-  STATE_IGNORED,
+  STATE_UNKNOWN,
   STATE_HANDLED,
   STATE_CHANGED,
   STATE_DO_SUPERSTATE
@@ -102,7 +103,6 @@ extern int _ti;
 #define HSM_DEBUG_PRINTLN(s) (printf("%s\n", (s)))
 
 //#define HSM_DEBUG_PRINT_EVENT(e) (void(e))
-//#define HSM_DEBUG_PRINT_EVENT(e) (printf("%s-%s;", __func__, signalNames[(e)->signal]))
 #define HSM_DEBUG_PRINT_EVENT(e) { \
 	int *f = std::find(std::begin(signal_filter), std::end(signal_filter), (e)->signal); \
 	print_signal = (f == std::end(signal_filter));                      \
@@ -131,12 +131,12 @@ extern int _ti;
 //
 // State Handler macros
 //
-#define CHANGE_STATE(current_state, new_state) (current_state->stateHandler = new_state), \
+#define CHANGE_STATE(current_state, new_state) (current_state->stateHandler = (state_handler)new_state), \
         HSM_DEBUG_PRINT_HANDLER("CHANGE_STATE"),                        \
         STATE_CHANGED
 #define HANDLE_STATE() (HSM_DEBUG_PRINT_HANDLER("HANDLE_STATE"), STATE_HANDLED)
 #define IGNORE_STATE(x) (void(x), HSM_DEBUG_PRINT_HANDLER("IGNORE_STATE"), STATE_IGNORED)
-#define HANDLE_SUPER_STATE(state, super_state) (state->stateHandler = super_state),\
+#define HANDLE_SUPER_STATE(state, super_state) (state->stateHandler = (state_handler)super_state),\
 													 HSM_DEBUG_PRINT_HANDLER("HANDLE_SUPER_STATE"), \
 													 STATE_DO_SUPERSTATE
 
