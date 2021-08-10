@@ -176,4 +176,5 @@ state Root {
 *** Self transition: do exit, do enter
 * else
 ** do exit from beginState from exitHierarchy until currentState is in entryHierarchy
+**
 ** do entry from currentState from entryHierarchy until currentState == endState

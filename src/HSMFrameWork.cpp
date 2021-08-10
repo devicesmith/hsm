@@ -315,9 +315,9 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
     endState.stateHandler = endStateHandler;
     int entryDepth = hsmDiscoverHierarch(&endState, entryHierarchyPath, ARRAY_LENGTH(entryHierarchyPath));
 
-    //struct hsm_state eventState {};
-    //eventState.stateHandler = eventStateHandler;
-    //hsmDiscoverHierarch(&eventState, exitHierarchyPath, ARRAY_LENGTH(exitHierarchyPath));
+    struct hsm_state eventState {};
+    eventState.stateHandler = eventStateHandler;
+//    hsmDiscoverHierarch(&eventState, exitHierarchyPath, ARRAY_LENGTH(exitHierarchyPath));
 
     bool sameHeirarchy = hsmCheckForSameHierarchy(exitHierarchyPath, exitDepth, entryHierarchyPath, entryDepth);
 
@@ -330,8 +330,8 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
                                                     sizeof(exitHierarchyPath)/sizeof(*exitHierarchyPath));
     int endStateInEntryPos = hsmCheckForHandlerInPath(&(endState.stateHandler), entryHierarchyPath,
                                                     sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
-    //int eventStateInEntryPos = hsmCheckForHandlerInPath(&(eventState.stateHandler), entryHierarchyPath,
-    //                                                sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
+    int eventStateInEntryPos = hsmCheckForHandlerInPath(&(eventState.stateHandler), entryHierarchyPath,
+                                                    sizeof(entryHierarchyPath)/sizeof(*entryHierarchyPath));
 
     //if(beginStateInEntryPos >= 0 && beginStateInExitPos >= 0) // No LCA will be needed
     if(sameHeirarchy)
@@ -378,24 +378,25 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
       }
       else if(endStateHandler == beginStateHandler) // self transition
       {
-        // TODO: Test this. This is where you are!
         if(exitDepth > 0)
         {
+          // exit up to just before state that handled the event
           self->stateHandler = beginStateHandler;
-          int depth = exitDepth;
-          do
+          while(self->stateHandler != eventStateHandler)
           {
             self->stateHandler(self, &baseExitEvent);
             HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseExitEvent);
             self->stateHandler(self, &baseSilentEvent);
-          } while(depth-- > 0);
+          }
 
-          // for(int entryIndex = beginStateInEntryPos - 1; self->stateHandler != endStateHandler; entryIndex--)
-          // {
-          //   self->stateHandler = entryHierarchyPath[entryIndex];
-          //   currentResult = self->stateHandler(self, &baseEntryEvent);
-          //   HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
-          // }
+          // enter down
+
+           for(int entryIndex = eventStateInEntryPos - 1; self->stateHandler != endStateHandler; entryIndex--)
+           {
+             self->stateHandler = entryHierarchyPath[entryIndex];
+             currentResult = self->stateHandler(self, &baseEntryEvent);
+             HSM_DEBUG_LOG_TRANSITION(self->stateHandler, &baseEntryEvent);
+           }
         }
         else
         {
@@ -444,9 +445,9 @@ void hsmProcess(struct hsm_state * self)
   if(fifoSize() > 0)
   {
     theEvent = fifoPop();
-    if( hsmHandleEvent(self, theEvent) == PROCESS_STATE_CHANGED)
+    if(hsmHandleEvent(self, theEvent) == PROCESS_STATE_CHANGED)
     {
-      while( hsmHandleEvent(self, &baseInitialEvent) == PROCESS_STATE_CHANGED );
+      while(hsmHandleEvent(self, &baseInitialEvent) == PROCESS_STATE_CHANGED);
     }
 
     hsmEventDelete(theEvent);
