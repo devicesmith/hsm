@@ -67,15 +67,20 @@ void hsmInitialState(struct hsm_state* state, state_handler stateHandler);
 
 hsm_process_result hsmHandleEvent(struct hsm_state * self, struct hsm_event * e);
 
-void hsmProcess(struct hsm_state * self);
+void hsmProcess(struct hsm_state * self, struct fifo_data* fifo);
 
+void queueInit(struct fifo_data* fifo, struct hsm_event **eventStart, int depth);
+int queueDepth(struct fifo_data* fifo, struct hsm_event **events);
+int queueSize(struct fifo_data* fifo, struct hsm_event **events);
+bool queuePush(struct fifo_data* fifo, struct hsm_event* e);
+struct hsm_event* queuePop(struct fifo_data* fifo, struct hsm_event** events);
 
 void fifoInit(struct hsm_event **eventStart, int depth);
 int fifoDepth();
 int fifoSize();
 bool fifoPush(struct hsm_event* e);
 struct hsm_event* fifoPop(void);
-bool hsmEventQueueInit(struct hsm_event ** eventQueueArray, int arrayLength);
+bool hsmEventQueueInit(struct fifo_data* fifo, struct hsm_event ** eventQueueArray, int arrayLength);
 
 bool hsmEventPoolInit(struct hsm_event * eventArray, int arrayLength);
 struct hsm_event * hsmEventNew(void);

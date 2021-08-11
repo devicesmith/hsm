@@ -111,11 +111,12 @@ stringify(LAST)
 struct BatteryHSM::hsm_batt_event battEventPool[10];
 // Allocate Event Queue
 struct hsm_event* battEventQueue[10];
+struct fifo_data fifoData;
 
 void BatteryHSM::InitStateMachine(struct hsm_batt_state* state, state_handler initialState)
 {
   hsmEventPoolInit(battEventPool, ARRAY_LENGTH(battEventPool));
-  hsmEventQueueInit(battEventQueue, ARRAY_LENGTH(battEventQueue));
+  hsmEventQueueInit(&fifoData, battEventQueue, ARRAY_LENGTH(battEventQueue));
   hsmInitStateMachine();
 
   // set intial state vars here
@@ -208,14 +209,14 @@ int main(int argc, char ** argv)
             cout << "BUTTON\n";
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_BUTTON);
-            fifoPush(e);
+            queuePush(&fifoData, e);
         }
         if(inChar == 'p')
         {
             cout << "POWER\n";
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_POWER);
-            fifoPush(e);
+            queuePush(&fifoData, e);
         }
 
         if(inChar == 'q') break;
@@ -230,10 +231,12 @@ int main(int argc, char ** argv)
 
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_TICK);
-            fifoPush(e);
+            queuePush(&fifoData, e);
         }
 
-        hsmProcess(&batt.state);
+        hsmProcess(&batt.state, &fifoData);
+
+        usleep(100);
     }
 
     return 0;

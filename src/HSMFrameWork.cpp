@@ -19,8 +19,6 @@ struct hsm_event baseExitEvent;
 struct hsm_event baseSilentEvent;
 struct hsm_event baseInitialEvent;
 
-struct fifo_data fifoData;
-
 bool semaphore_locked;
 void semaphore_get(void)
 {
@@ -36,6 +34,59 @@ void semaphore_release(void)
   semaphore_locked = false;
 }
 
+void queueInit(struct fifo_data* fifo, struct hsm_event ** queue, int depth)
+{
+  semaphore_locked = false;
+  fifo->head = 0;
+  fifo->tail = 0;
+  fifo->size = 0;
+  fifo->depth = depth;
+  fifo->hsmEvents = queue;
+}
+
+int queueDepth(struct fifo_data* fifo)
+{
+  return fifo->depth;
+}
+
+int queueSize(struct fifo_data* fifo)
+{
+  return fifo->size;
+}
+
+bool queuePush(struct fifo_data* fifo, struct hsm_event* e)
+{
+  semaphore_get();
+
+  if(fifo->size < fifo->depth)
+  {
+    fifo->hsmEvents[fifo->tail] = e;
+    fifo->tail = (fifo->tail + 1) % fifo->depth;
+    fifo->size++;
+
+    semaphore_release();
+    return true;
+  }
+  semaphore_release();
+  return false;
+}
+
+struct hsm_event* queuePop(struct fifo_data* fifo)
+{
+  semaphore_get();
+  hsm_event* e = NULL;
+
+  if(fifo->size > 0)
+  {
+    e = fifo->hsmEvents[fifo->head];
+    fifo->head = (fifo->head + 1) % fifo->depth;
+    fifo->size--;
+  }
+  semaphore_release();
+  return e;
+}
+
+#if 0
 void fifoInit(struct hsm_event ** queue, int depth)
 {
   semaphore_locked = false;
@@ -87,6 +138,7 @@ struct hsm_event* fifoPop(void)
   semaphore_release();
   return e;
 }
+#endif
 
 bool hsmEventPoolInit(hsm_event * eventArray, int arrayLength)
 {
@@ -101,9 +153,9 @@ bool hsmEventPoolInit(hsm_event * eventArray, int arrayLength)
   return true;
 }
 
-bool hsmEventQueueInit(struct hsm_event ** eventQueueArray, int arrayLength)
+bool hsmEventQueueInit(struct fifo_data* fifo, struct hsm_event ** eventQueueArray, int arrayLength)
 {
-  fifoInit(eventQueueArray, arrayLength);
+  queueInit(fifo, eventQueueArray, arrayLength);
 
   return true;
 }
@@ -414,13 +466,13 @@ hsm_process_result hsmHandleEvent(struct hsm_state *self, struct hsm_event * the
   return PROCESS_HANDLED;
 }
 
-void hsmProcess(struct hsm_state * self)
+void hsmProcess(struct hsm_state * self, struct fifo_data *fifo)
 {
   struct hsm_event * theEvent;
 
-  if(fifoSize() > 0)
+  if(queueSize(fifo) > 0)
   {
-    theEvent = fifoPop();
+    theEvent = queuePop(fifo);
     if(hsmHandleEvent(self, theEvent) == PROCESS_STATE_CHANGED)
     {
       while(hsmHandleEvent(self, &baseInitialEvent) == PROCESS_STATE_CHANGED);
