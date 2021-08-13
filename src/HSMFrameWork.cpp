@@ -7,10 +7,12 @@ int signal_filter[10] = {2};
 
 bool print_signal = true;
 
+#ifdef HSM_DEBUG_LOGGING
 // history for state tracking
 state_handler transition_history[HISTORY_LENGTH];
 struct hsm_event event_history[HISTORY_LENGTH];
 int _ti {0};
+#endif
 
 //struct hsm_event* hsmEventQueue[EVENT_QUEUE_DEPTH];
 struct hsm_event_pool hsmEventPool;

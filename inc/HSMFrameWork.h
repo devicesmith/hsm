@@ -88,7 +88,7 @@ void hsmEventDelete(void *);
 
 //extern void (*pLogCallback)(char *);
 
-#define HSM_DEBUG_LOGGING
+//#define HSM_DEBUG_LOGGING
 #ifdef HSM_DEBUG_LOGGING
 
 #define HISTORY_LENGTH 20
@@ -131,6 +131,8 @@ extern int _ti;
 #define HSM_DEBUG_PRINT_HANDLER(x) (void(x))
 #define HSM_DEBUG_NEWLINE() // will this work? empty define needed here.
 #define HSM_DEBUG_PRINT_EVENT(e) (void(e))
+#define HSM_DEBUG_LOG_TRANSITION(sH, e) (void(sH), void(e))
+#define HSM_DEBUG_PRINTLN(s) (void(s))
 #endif
 
 //

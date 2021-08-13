@@ -60,6 +60,66 @@ int _kbhit() {
 }
 
 
+int powerOn {' '};
+int buttonState {' '};
+int ledIndicator[5] {' ', ' ', ' ', ' ', ' '};
+
+void updateDisplay()
+{
+    static bool hasPrinted {false};
+    if(!hasPrinted)
+    {
+        hasPrinted = true;
+        printf("Power Button Level\n");
+    }
+
+    printf(" [%c]  [%c]  [%c][%c][%c][%c][%c]\r",
+           powerOn, buttonState,
+           ledIndicator[0], ledIndicator[1], ledIndicator[2],
+           ledIndicator[3], ledIndicator[4]);
+}
+
+void showPowerLed(bool on)
+{
+    if(on)
+    {
+        powerOn = 'X';
+    }
+    else
+    {
+        powerOn = ' ';
+    }
+}
+
+void showPowerOn()
+{
+    for(int i = 0; i < 5; i++) ledIndicator[i] = ' ';
+    ledIndicator[2] = 'X';
+    updateDisplay();
+}
+
+void showPowerOff()
+{
+    for(int i = 0; i < 5; i++) ledIndicator[i] = ' ';
+    updateDisplay();
+}
+
+void showChargeLevel(int ledOnIndex)
+{
+    for(int i = 0; i < 5; i++) ledIndicator[i] = ' ';
+    for(int i = 0; i < ledOnIndex; i++)
+    {
+        ledIndicator[i] = 'X';
+    }
+    updateDisplay();
+}
+
+void showButton(bool on)
+{
+    if(on) buttonState = 'X';
+    else buttonState = ' ';
+    updateDisplay();
+}
 
 class BatteryHSM
 {
@@ -79,6 +139,9 @@ class BatteryHSM
     enum hsm_batt_signal
     {
       SIG_BUTTON = HSM_SIG_USER,
+      SIG_BUTTON_UP,
+      SIG_BUTTON_SHORT,
+      SIG_BUTTON_LONG,
       SIG_POWER,
       SIG_TICK,
 	  SIG_LAST
@@ -87,11 +150,12 @@ class BatteryHSM
     void InitStateMachine(hsm_batt_state * state, state_handler initialState);
     static hsm_state_result RootState(struct hsm_batt_state *self, struct hsm_batt_event const *e);
     static hsm_state_result s0(struct hsm_batt_state* self, struct hsm_batt_event const * e);
-    static hsm_state_result OnState(struct hsm_batt_state* self, struct hsm_batt_event const * e);
-    static hsm_state_result OffState(struct hsm_batt_state* self, struct hsm_batt_event const * e);
+    static hsm_state_result PowerOnState(struct hsm_batt_state* self, struct hsm_batt_event const * e);
+    static hsm_state_result PowerOffState(struct hsm_batt_state* self, struct hsm_batt_event const * e);
 
 };
 
+#ifdef HSM_DEBUG_LOGGING
 #define stringify( name ) # name
 const char* signalNames[] = {
   stringify(UNKNOWN),
@@ -101,11 +165,14 @@ const char* signalNames[] = {
   stringify(EXIT),
   stringify(INITIAL),
   stringify(BUTTON),
+  stringify(BUTTON_UP),
+  stringify(BUTTON_SHORT),
+  stringify(BUTTON_LONG),
   stringify(POWER),
   stringify(TICK),
   stringify(LAST)
 };
-
+#endif
 
 // Allocate Event Pool
 struct BatteryHSM::hsm_batt_event battEventPool[10];
@@ -132,24 +199,10 @@ hsm_state_result BatteryHSM::RootState(struct hsm_batt_state* self, struct hsm_b
 
 hsm_state_result BatteryHSM::s0(struct hsm_batt_state* self, struct hsm_batt_event const * e)
 {
-  HSM_DEBUG_PRINT_EVENT(e);
-  switch(e->signal)
-  {
-      case HSM_SIG_ENTRY:
-          return HANDLE_STATE();
-      case HSM_SIG_EXIT:
-          return HANDLE_STATE();
-      case HSM_SIG_INITIAL:
-          return CHANGE_STATE(self, &BatteryHSM::OffState);
-      case SIG_TICK:
-          cout << "TICK\n";
-          return HANDLE_STATE();
-  }
-  return HANDLE_SUPER_STATE(self, &BatteryHSM::RootState);
-}
+    static int buttonTickCount {};
+    static bool buttonDown {false};
+    static int ledOnIndex {0};
 
-hsm_state_result BatteryHSM::OnState(struct hsm_batt_state* self, struct hsm_batt_event const * e)
-{
     HSM_DEBUG_PRINT_EVENT(e);
     switch(e->signal)
     {
@@ -158,21 +211,72 @@ hsm_state_result BatteryHSM::OnState(struct hsm_batt_state* self, struct hsm_bat
         case HSM_SIG_EXIT:
             return HANDLE_STATE();
         case HSM_SIG_INITIAL:
+            return CHANGE_STATE(self, &BatteryHSM::PowerOffState);
+        case SIG_TICK:
+            buttonTickCount++;
+            updateDisplay();
+            return HANDLE_STATE();
+        case SIG_BUTTON:
+            showButton(true);
+            if(!buttonDown)
+            {
+                buttonTickCount = 0;
+                ledOnIndex = 1;
+                buttonDown = true;
+                showChargeLevel(ledOnIndex);
+            }
+            else
+            {
+                //printf("tickCount:%d\n", tickCount);
+                if(buttonTickCount > 100)
+                {
+                    if(++ledOnIndex <= 5)
+                    {
+                        showChargeLevel(ledOnIndex);
+                        buttonTickCount = 0;
+                    }
+                }
+            }
+            return HANDLE_STATE();
+        case SIG_BUTTON_UP:
+//            cout << "Button down for: " << tickCount << "\n";
+            buttonDown = false;
+            showChargeLevel(0);
+            showButton(false);
+            return HANDLE_STATE();
+    }
+    return HANDLE_SUPER_STATE(self, &BatteryHSM::RootState);
+}
+
+hsm_state_result BatteryHSM::PowerOnState(struct hsm_batt_state* self, struct hsm_batt_event const * e)
+{
+    HSM_DEBUG_PRINT_EVENT(e);
+    switch(e->signal)
+    {
+        case HSM_SIG_ENTRY:
+            showPowerLed(true);
+            return HANDLE_STATE();
+        case HSM_SIG_EXIT:
+            return HANDLE_STATE();
+        case HSM_SIG_INITIAL:
             return HANDLE_STATE();
         case SIG_TICK:
             return HANDLE_SUPER_STATE(self, &BatteryHSM::s0);
-        case SIG_BUTTON:
-            return HANDLE_STATE();
+        //case SIG_BUTTON:
+        //    return HANDLE_STATE();
+        case SIG_POWER:
+            return CHANGE_STATE(self, &BatteryHSM::PowerOffState);
     }
     return HANDLE_SUPER_STATE(self, &BatteryHSM::s0);
 }
 
-hsm_state_result BatteryHSM::OffState(struct hsm_batt_state* self, struct hsm_batt_event const * e)
+hsm_state_result BatteryHSM::PowerOffState(struct hsm_batt_state* self, struct hsm_batt_event const * e)
 {
     HSM_DEBUG_PRINT_EVENT(e);
     switch(e->signal)
     {
         case HSM_SIG_ENTRY:
+            showPowerLed(false);
             return HANDLE_STATE();
         case HSM_SIG_EXIT:
             return HANDLE_STATE();
@@ -180,8 +284,12 @@ hsm_state_result BatteryHSM::OffState(struct hsm_batt_state* self, struct hsm_ba
             return HANDLE_STATE();
         case SIG_TICK:
             return HANDLE_SUPER_STATE(self, &BatteryHSM::s0);
-        case SIG_BUTTON:
+        case SIG_BUTTON_SHORT:
             return HANDLE_STATE();
+        case SIG_BUTTON_LONG:
+            return HANDLE_STATE();
+        case SIG_POWER:
+            return CHANGE_STATE(self, &BatteryHSM::PowerOnState);
     }
     return HANDLE_SUPER_STATE(self, &BatteryHSM::s0);
 }
@@ -200,8 +308,8 @@ double getTimeStamp()
     {
         //return 1e9 * currentTime.tv_sec + currentTime.tv_nsec; // nsec
         //return 1e6 * currentTime.tv_sec + currentTime.tv_nsec * 1e-3; // usec
-        //return 1e3 * currentTime.tv_sec + currentTime.tv_nsec * 1e-6; // msec
-        return currentTime.tv_sec + currentTime.tv_nsec * 1e-9; // sec
+        return 1e3 * currentTime.tv_sec + currentTime.tv_nsec * 1e-6; // msec
+        //return currentTime.tv_sec + currentTime.tv_nsec * 1e-9; // sec
     }
     return -1.0;
 }
@@ -216,35 +324,59 @@ int main(int argc, char ** argv)
 
     while(true)
     {
+        static bool buttonDown {false};
+        static double buttonDownStart {0.0};
+
         int inChar = get_button_input();
+  //      if(inChar != 0)
+  //      {
+  //          cout <<"got:" << inChar << ":(" << (char)inChar << ")" << "\n";
+  //      }
+
         if(inChar == 'b')
         {
-            cout << "BUTTON\n";
+            buttonDown = true;
+            buttonDownStart = getTimeStamp();
+
+//            cout << "BUTTON DOWN\n";
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_BUTTON);
             queuePush(&fifoData, e);
         }
-        if(inChar == 'p')
+        else if(inChar == 'p')
         {
-            cout << "POWER\n";
+            //cout << "POWER\n";
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_POWER);
             queuePush(&fifoData, e);
         }
+        else if(inChar == 'q')
+        {
+            break;
+        }
+        else
+        {
+            //if(buttonDown && (getTimeStamp() - buttonDownStart) > 100.0) // 100 ms
+            if(buttonDown && (getTimeStamp() - buttonDownStart) > 50.0)
+            {
+                //cout << "\nmain -> BUTTON UP\n";
 
-        if(inChar == 'q') break;
+                buttonDown = false;
+                BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
+                e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_BUTTON_UP);
+                queuePush(&fifoData, e);
+            }
+        }
 
-        if(inChar != 0) cout <<"got:" << inChar << "\n";
-
-        //const double usec_delay {1000};
         static double t = getTimeStamp();
-        if((getTimeStamp() - t) > 1.0)
+        if((getTimeStamp() - t) > 10.0) // 1000 ms
         {
             t = getTimeStamp();
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_TICK);
             queuePush(&fifoData, e);
         }
+
 
         hsmProcess(&batt.state, &fifoData);
 
@@ -254,121 +386,3 @@ int main(int argc, char ** argv)
 
     return 0;
 }
-
-#if 0
-
-int GetButtonInput() {
-	if (_kbhit()) {
-		return getchar();
-	}
-	return 0;
-}
-
-#define TICK_COUNT_START 100000
-
-// Events for all
-extern proto_event_t tickEvent;
-// Events for Proto HSM
-extern proto_event_t powerConnectedEvent;
-extern proto_event_t powerDisConnectedEvent;
-extern proto_event_t chargeLevelEvent;
-extern proto_event_t buttonLongEvent;
-extern proto_event_t buttonShortEvent;
-
-// Events for LED HSM
-extern proto_event_t showButtonOnEvent;
-extern proto_event_t showButtonOffEvent;
-extern proto_event_t showChargeLevelEvent;
-extern proto_event_t showPowerOnEvent;
-extern proto_event_t showPowerOffEvent;
-extern proto_event_t updateDisplay;
-
-// Button Manager HSM
-extern proto_event_t kbHitEvent;
-
-int main(int argc, char** argv) {
-
-	// Events for all
-	tickEvent.signal 				= SIG_TICK_MS;
-	// Events for Proto HSM
-	powerConnectedEvent.signal 		= SIG_POWER_CONNECTED;
-	powerDisConnectedEvent.signal 	= SIG_POWER_DISCONNECTED;
-	chargeLevelEvent.signal       	= SIG_CHARGE_LEVEL;
-	buttonLongEvent.signal    		= SIG_LONG_BUTTON_PRESS;
-	buttonShortEvent.signal			= SIG_SHORT_BUTTON_PRESS;
-
-	// Events for LED HSM
-	showButtonOnEvent.signal 		= SIG_SHOW_BUTTON;
-	showButtonOffEvent.signal 		= SIG_HIDE_BUTTON;
-	showChargeLevelEvent.signal		= SIG_SHOW_CHARGE_LEVEL;
-	showPowerOnEvent.signal			= SIG_SHOW_POWER;
-	showPowerOffEvent.signal		= SIG_HIDE_POWER;
-	updateDisplay.signal 			= SIG_UPDATE_DISPLAY;
-
-	// Events for button manager
-	kbHitEvent.signal 				= SIG_KBHIT;
-
-	hsm_event_t* anEvent;
-
-	ProtoHSM protoHSM;
-	protoHSM.SetInitialState(ProtoHSM::NotCharging);
-
-	LEDHSM ledHSM;
-	ledHSM.SetInitialState(LEDHSM::Off);
-
-	ButtonManagerHSM buttonManagerHSM;
-	buttonManagerHSM.SetInitialState(ButtonManagerHSM::ButtonManager);
-
-	int tickCount = TICK_COUNT_START;
-
-	cout << "Hit Q to quit" << endl;
-
-	int inChar = 0;
-	while(toupper(inChar) != 'Q') {
-		inChar = GetButtonInput();
-
-		if (inChar != 0) {
-			kbHitEvent.key = inChar;
-			//printf("[%c]\n", kbHitEvent.key);
-			buttonManagerHSM.InQueuePush(&kbHitEvent);
-		}
-
-		static uint32_t updateDisplayTime_ms = 0;
-		static clock_t t = clock();
-		if ((float)(clock() - t)/CLOCKS_PER_SEC > 0.001 )
-		{
-			t = clock();
-			ledHSM.InQueuePush(&tickEvent);
-			buttonManagerHSM.InQueuePush(&tickEvent);
-			if (++updateDisplayTime_ms > 100)
-			{
-				updateDisplayTime_ms = 0;
-				ledHSM.InQueuePush(&updateDisplay);
-				fflush(stdout);
-			}
-		}
-
-		// Process all events in each State Machine's in queue
-		buttonManagerHSM.Process();
-		protoHSM.Process();
-		ledHSM.Process();
-
-		// Move items from state machine's out queue into in queues.
-		if(buttonManagerHSM.OutQueueGetSize() > 0) {
-			anEvent = buttonManagerHSM.OutQueuePop();
-			protoHSM.InQueuePush(anEvent);
-			ledHSM.InQueuePush(anEvent);
-		}
-		if(protoHSM.OutQueueGetSize() > 0) {
-			ledHSM.InQueuePush(protoHSM.OutQueuePop());
-		}
-		if(ledHSM.OutQueueGetSize() > 0) {
-			protoHSM.InQueuePush(ledHSM.OutQueuePop());
-		}
-  }
-
-  printf("\nDone.\n");
-
-  return 0;
-}
-#endif

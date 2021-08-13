@@ -485,9 +485,10 @@ TEST_CASE("Two")
 TEST_CASE("Full Transition Test")
 {
   TestHSM testHSM;
-  testHSM.ti = &_ti;
-  testHSM.transition_history = transition_history;
-  testHSM.event_history      = event_history;
+
+  //testHSM.ti = &_ti;
+  //testHSM.transition_history = transition_history;
+  //testHSM.event_history      = event_history;
 
   SECTION("From s2")
   {
@@ -495,6 +496,7 @@ TEST_CASE("Full Transition Test")
     testHSM.InitStateMachine(&testHSM.state, &testHSM.s2);
 
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+#ifdef HSM_DEBUG_LOGGING // FIXME: Switch this comparison to a wrapped macro
     REQUIRE(transition_history[0] == testHSM.RootState);
     REQUIRE(transition_history[1] == testHSM.s0);
     REQUIRE(transition_history[2] == testHSM.s2);
@@ -502,8 +504,8 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[4] == testHSM.s21);
     REQUIRE(transition_history[5] == testHSM.s211);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
 
     HSM_DEBUG_PRINTLN("==> s211 Signal G");
     TestHSM::hsm_test_event* e = (TestHSM::hsm_test_event*)hsmEventNew();
@@ -512,6 +514,7 @@ TEST_CASE("Full Transition Test")
     hsmProcess(&testHSM.state, &fifoData);
 
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+#ifdef HSM_DEBUG_LOGGING // FIXME: Switch this comparison to a wrapped macro
     REQUIRE(transition_history[0] == testHSM.s211);
     REQUIRE(transition_history[1] == testHSM.s21);
     REQUIRE(transition_history[2] == testHSM.s2);
@@ -519,8 +522,8 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[4] == testHSM.s1);
     REQUIRE(transition_history[5] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
 
     HSM_DEBUG_PRINTLN("==> s11 Signal I");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
@@ -528,15 +531,18 @@ TEST_CASE("Full Transition Test")
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == 0);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 Signal A");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_A;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
@@ -544,14 +550,16 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[3] == testHSM.s1);
     REQUIRE(transition_history[4] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 Signal D");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_D;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
     REQUIRE(transition_history[2] == testHSM.s0);
@@ -559,27 +567,31 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[4] == testHSM.s11);
     REQUIRE(transition_history[5] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 second Signal D");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_D;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
     REQUIRE(transition_history[2] == testHSM.s11);
     REQUIRE(transition_history[3] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 Signal C");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_C;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
     REQUIRE(transition_history[2] == testHSM.s2);
@@ -588,14 +600,16 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[5] == testHSM.s211);
     REQUIRE(transition_history[6] == testHSM.s211);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s211 Signal E");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_E;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == testHSM.s211);
     REQUIRE(transition_history[1] == testHSM.s21);
     REQUIRE(transition_history[2] == testHSM.s2);
@@ -603,57 +617,64 @@ TEST_CASE("Full Transition Test")
     REQUIRE(transition_history[4] == testHSM.s11);
     REQUIRE(transition_history[5] == testHSM.s11);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 2nd Signal E");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_E;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s11);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
     REQUIRE(transition_history[2] == testHSM.s1);
     REQUIRE(transition_history[3] == testHSM.s11);
     //HSM_DEBUG_PRINTLN("\nShould be: s11-Exit;s1-EXIT;s1-ENTRY;s11-ENTRY;");
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s11 Signal G");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_G;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(transition_history[0] == testHSM.s11);
     REQUIRE(transition_history[1] == testHSM.s1);
     REQUIRE(transition_history[2] == testHSM.s2);
     REQUIRE(transition_history[3] == testHSM.s21);
     REQUIRE(transition_history[4] == testHSM.s211);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s211 Signal I");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_I;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
+#ifdef HSM_DEBUG_LOGGING
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
     //REQUIRE(transition_history[0] == testHSM.s11);
     //REQUIRE(transition_history[1] == testHSM.s1);
     HSM_DEBUG_NEWLINE();
-
     HSM_DEBUG_LOG_ZERO(transition_history);
+#endif
+
     HSM_DEBUG_PRINTLN("==> s211 2nd Signal I");
     e = (TestHSM::hsm_test_event*)hsmEventNew();
     e->signal = (hsm_signal)TestHSM::hsm_test_signal::TEST_SIG_I;
     queuePush(&fifoData, e);
     hsmProcess(&testHSM.state, &fifoData);
     REQUIRE(testHSM.state.stateHandler == &testHSM.s211);
+#ifdef HSM_DEBUG_LOGGING
     //REQUIRE(transition_history[0] == testHSM.s11);
     //REQUIRE(transition_history[1] == testHSM.s1);
     HSM_DEBUG_NEWLINE();
-
-
+#endif
   }
 }
