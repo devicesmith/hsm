@@ -94,16 +94,16 @@ class BatteryHSM
 
 #define stringify( name ) # name
 const char* signalNames[] = {
-stringify(UNKNOWN),
-stringify(INIT),
-stringify(SILENT),
-stringify(ENTRY),
-stringify(EXIT),
-stringify(INITIAL),
-stringify(BUTTON),
-stringify(POWER),
-stringify(TICK),
-stringify(LAST)
+  stringify(UNKNOWN),
+  stringify(INIT),
+  stringify(SILENT),
+  stringify(ENTRY),
+  stringify(EXIT),
+  stringify(INITIAL),
+  stringify(BUTTON),
+  stringify(POWER),
+  stringify(TICK),
+  stringify(LAST)
 };
 
 
@@ -187,10 +187,23 @@ hsm_state_result BatteryHSM::OffState(struct hsm_batt_state* self, struct hsm_ba
 }
 
 int get_button_input() {
-	if (_kbhit()) {
-		return getchar();
-	}
-	return 0;
+    if (_kbhit()) {
+        return getchar();
+    }
+    return 0;
+}
+
+double getTimeStamp()
+{
+    struct timespec currentTime;
+    if(clock_gettime(CLOCK_MONOTONIC, &currentTime) >= 0)
+    {
+        //return 1e9 * currentTime.tv_sec + currentTime.tv_nsec; // nsec
+        //return 1e6 * currentTime.tv_sec + currentTime.tv_nsec * 1e-3; // usec
+        //return 1e3 * currentTime.tv_sec + currentTime.tv_nsec * 1e-6; // msec
+        return currentTime.tv_sec + currentTime.tv_nsec * 1e-9; // sec
+    }
+    return -1.0;
 }
 
 int main(int argc, char ** argv)
@@ -223,12 +236,11 @@ int main(int argc, char ** argv)
 
         if(inChar != 0) cout <<"got:" << inChar << "\n";
 
-        //static uint32_t updateDisplayTime_ms = 0;
-        static clock_t t = clock();
-        if((float)(clock() - t)/CLOCKS_PER_SEC > 1)
+        //const double usec_delay {1000};
+        static double t = getTimeStamp();
+        if((getTimeStamp() - t) > 1.0)
         {
-            t = clock();
-
+            t = getTimeStamp();
             BatteryHSM::hsm_batt_event* e = (BatteryHSM::hsm_batt_event*)hsmEventNew();
             e->signal = static_cast<hsm_signal>(BatteryHSM::hsm_batt_signal::SIG_TICK);
             queuePush(&fifoData, e);
@@ -236,7 +248,8 @@ int main(int argc, char ** argv)
 
         hsmProcess(&batt.state, &fifoData);
 
-        usleep(100);
+        //sleep(0.100);
+        usleep(1000.0); // 1 ms
     }
 
     return 0;
